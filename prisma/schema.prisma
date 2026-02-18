@@ -1,0 +1,374 @@
+// ==============================================
+// EPAD - Sistema de Gestao de Atendimento Domiciliar
+// Schema preparado para PostgreSQL (compativel com SQLite em dev)
+// ==============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==============================================
+// IMPORTANTE: ENUMS COMO STRING
+// ==============================================
+// SQLite nao suporta enums nativos. Todos os campos de enum sao String.
+// VALIDACAO OBRIGATORIA NO BACKEND usando constantes/guards.
+// Ao migrar para PostgreSQL, converter para enum nativo se desejado.
+//
+// UserRole: "ADMIN" | "PROFESSIONAL" | "CLIENT"
+// ProfessionalType: "CAREGIVER" | "NURSE" | "TECHNICIAN" | "OTHER"
+// ShiftStatus: "OPEN" | "OFFERED" | "ASSIGNED" | "ACCEPTED" | "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "VERIFIED" | "CANCELLED" | "NO_SHOW" | "URGENT_OPEN"
+// EventType: "CREATED" | "ACCEPTED" | "CONFIRMED" | "STARTED" | "FINISHED" | "CANCELLED" | "LATE" | "OCCURRENCE" | "MED_REQUEST" | "RESOLVED" | "OFFERED" | "ASSIGNED" | "UNASSIGNED" | "VERIFIED" | "NO_SHOW" | "RESCHEDULED" | "VALUE_ADJUSTED" | "NOTE_ADDED"
+// ProfessionalStatus: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "PENDING"
+// FeedbackRole: "PROFESSIONAL" | "CLIENT" | "ADMIN"
+
+// ==============================================
+// USER - Entidade principal de autenticacao
+// ==============================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String?  // Opcional para permitir criacao de usuarios sem nome inicial (ex: seed)
+  role         String   @default("CLIENT") // UserRole - validar no backend
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relacionamentos de perfil (1:1)
+  professionalProfile ProfessionalProfile?
+  clientProfile       ClientProfile?
+
+  // Plantoes criados (Admin)
+  createdShifts Shift[] @relation("CreatedByAdmin")
+
+  // Eventos criados
+  shiftEvents ShiftEvent[]
+
+  // Feedbacks dados
+  feedbacks Feedback[]
+
+  @@index([email])
+  @@index([role])
+  @@index([active])
+}
+
+// ==============================================
+// PROFESSIONAL PROFILE - Dados especificos do profissional
+// ==============================================
+
+model ProfessionalProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  professionalType String   @default("CAREGIVER") // ProfessionalType - validar no backend
+  approved         Boolean  @default(false)       // Pre-aprovado pela EPAD
+  internalScore    Int?                           // Score interno discreto (1-100)
+  internalNotes    String?                        // Notas internas (apenas admin ve)
+  phone            String?
+  // LGPD: Dado sensivel - NAO retornar em APIs publicas. Acesso restrito por role.
+  document         String?                        // CPF/RG
+  avatarUrl        String?                        // URL relativa do avatar (/uploads/avatars/...)
+
+  // Gestao avancada de profissionais
+  status          String  @default("ACTIVE")     // ProfessionalStatus - "ACTIVE" | "INACTIVE" | "SUSPENDED" | "PENDING"
+  skills          String?                        // JSON array de habilidades
+  ratingAvg       Float?                         // Media de avaliacoes (cache)
+  totalShifts     Int     @default(0)            // Contador de plantoes (cache)
+  completedShifts Int     @default(0)            // Plantoes concluidos (cache)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relacionamentos
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shifts         Shift[]        @relation("AssignedProfessional")
+  availabilities Availability[]
+
+  @@index([professionalType])
+  @@index([approved])
+  @@index([status])
+}
+
+// ==============================================
+// CLIENT PROFILE - Dados especificos do familiar/responsavel
+// ==============================================
+
+model ClientProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  phone     String?
+  // LGPD: Dado sensivel - NAO retornar em APIs publicas. Acesso restrito por role.
+  document  String?  // CPF
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patients       Patient[]
+  shiftRequests  ShiftRequest[]
+
+  @@index([userId])
+}
+
+// ==============================================
+// PATIENT - Paciente atendido
+// ==============================================
+
+model Patient {
+  id           String    @id @default(uuid())
+  fullName     String
+  birthDate    DateTime?
+  address      String
+  neighborhood String?
+  city         String?
+  state        String?
+  zipCode      String?
+
+  // LGPD: Dado sensivel - NAO retornar em APIs publicas. Acesso restrito por role.
+  // Conter apenas informacoes relevantes ao cuidado diario, sem diagnosticos ou CIDs.
+  medicalNotes String?
+
+  // Formato esperado: JSON string. Ex: "[{\"name\":\"Dipirona\",\"dose\":\"500mg\",\"frequency\":\"8h\"}]"
+  // Validacao e parsing no backend.
+  medications  String?
+
+  allergies    String?   // Alergias conhecidas
+
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  clientId      String
+  client        ClientProfile  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  shifts        Shift[]
+  shiftRequests ShiftRequest[]
+
+  @@index([clientId])
+  @@index([active])
+  @@index([fullName])
+}
+
+// ==============================================
+// SHIFT - Plantao/Atendimento
+// ==============================================
+
+model Shift {
+  id String @id @default(uuid())
+
+  // Datas do plantao
+  startDateTime DateTime
+  endDateTime   DateTime
+
+  // Tipo de profissional necessario (ProfessionalType - validar no backend)
+  requiredProfessionalType String @default("CAREGIVER")
+
+  // Endereco (pode ser diferente do paciente)
+  address      String
+  neighborhood String?
+  city         String?
+
+  // Detalhes
+  needs String? // Necessidades especificas (texto livre)
+
+  // Valor em CENTAVOS para evitar erro de precisao financeira
+  // Ex: R$ 150,00 = 15000
+  value Int?
+
+  // Financeiro avancado
+  adjustmentsCents Int?    // Ajuste financeiro (+/-)
+  totalValueCents  Int?    // Valor final calculado (value + adjustments)
+
+  // Geolocalizacao para futuro mapa
+  locationLat Float?       // Latitude
+  locationLng Float?       // Longitude
+
+  // Notas internas do admin
+  adminNotes String?
+
+  // Status (ShiftStatus - validar no backend via maquina de estados)
+  status String @default("OPEN")
+
+  // Timestamps de execucao
+  acceptedAt  DateTime?
+  confirmedAt DateTime?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+
+  // Cancelamento
+  // IMPORTANTE: cancelReason e OBRIGATORIO quando status = "CANCELLED"
+  // Validacao feita no backend, nao no Prisma.
+  cancelledAt  DateTime?
+  cancelReason String?
+
+  // Flags
+  isUrgent Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  professionalId String?
+  professional   ProfessionalProfile? @relation("AssignedProfessional", fields: [professionalId], references: [id])
+
+  createdByAdminId String
+  createdByAdmin   User @relation("CreatedByAdmin", fields: [createdByAdminId], references: [id])
+
+  // Eventos e feedbacks
+  events    ShiftEvent[]
+  feedbacks Feedback[]
+
+  @@index([patientId])
+  @@index([professionalId])
+  @@index([status])
+  @@index([startDateTime])
+  @@index([createdByAdminId])
+  @@index([requiredProfessionalType])
+  @@index([isUrgent])
+}
+
+// ==============================================
+// SHIFT EVENT - Auditoria de acoes no plantao
+// ==============================================
+
+model ShiftEvent {
+  id String @id @default(uuid())
+
+  // Tipo do evento (EventType - validar no backend)
+  type String
+
+  // Severidade do evento: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" (null para eventos de sistema)
+  severity String?
+
+  // Metadados em formato JSON string
+  // Ex: "{\"reason\":\"Paciente dormindo\",\"severity\":\"low\"}"
+  metadata String?
+
+  // Descricao legivel do evento
+  description String?
+
+  // Auditoria enriquecida
+  entityType String?  // "SHIFT" | "PATIENT" | "PROFESSIONAL" (default SHIFT)
+  entityId   String?  // ID da entidade (para auditoria generica futura)
+  beforeJson String?  // Estado anterior (JSON)
+  afterJson  String?  // Estado posterior (JSON)
+  reason     String?  // Motivo da acao (obrigatorio em cancel/adjust)
+  metaJson   String?  // Metadados extras em JSON
+
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  shiftId String
+  shift   Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  actorUserId String
+  actor       User @relation(fields: [actorUserId], references: [id])
+
+  @@index([shiftId])
+  @@index([actorUserId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([entityType])
+  @@index([entityId])
+}
+
+// ==============================================
+// AVAILABILITY - Disponibilidade semanal do profissional
+// ==============================================
+
+model Availability {
+  id             String @id @default(uuid())
+  professionalId String
+  dayOfWeek      Int    // 0=Domingo, 1=Segunda, ..., 6=Sabado
+  startTime      String // "08:00"
+  endTime        String // "18:00"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  professional ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, dayOfWeek])
+  @@index([professionalId])
+}
+
+// ==============================================
+// SHIFT REQUEST - Solicitacao de plantao pelo familiar
+// ==============================================
+// RequestStatus: "PENDING" | "APPROVED" | "REJECTED"
+
+model ShiftRequest {
+  id String @id @default(uuid())
+
+  // Dados da solicitacao
+  patientId                String
+  preferredStartDateTime   DateTime
+  preferredEndDateTime     DateTime
+  requiredProfessionalType String   @default("CAREGIVER")
+  needs                    String?  // Necessidades especificas
+  notes                    String?  // Observacoes do familiar
+  isUrgent                 Boolean  @default(false)
+
+  // Status da solicitacao
+  status        String    @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
+  adminResponse String?   // Resposta do admin (motivo de rejeicao, etc)
+  shiftId       String?   // ID do plantao criado (se aprovado)
+  resolvedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  clientId String
+  client   ClientProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  patient  Patient       @relation(fields: [patientId], references: [id])
+
+  @@index([clientId])
+  @@index([patientId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ==============================================
+// FEEDBACK - Avaliacoes pos-plantao
+// ==============================================
+
+model Feedback {
+  id String @id @default(uuid())
+
+  // De quem e o feedback (FeedbackRole - validar no backend)
+  fromRole String
+
+  // Avaliacao geral de 1 a 5
+  rating Int
+
+  // Avaliacoes por categoria (1 a 5, opcionais)
+  ratingPunctuality    Int?  // Pontualidade
+  ratingCare           Int?  // Qualidade do cuidado
+  ratingCommunication  Int?  // Comunicacao
+
+  // Comentario opcional
+  notes String?
+
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  shiftId String
+  shift   Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  // Um usuario so pode dar um feedback por plantao
+  @@unique([shiftId, userId])
+  @@index([shiftId])
+  @@index([userId])
+  @@index([fromRole])
+}
