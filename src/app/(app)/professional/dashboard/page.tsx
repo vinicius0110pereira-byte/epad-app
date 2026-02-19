@@ -10,7 +10,6 @@ import { ShiftActions } from "./shift-actions";
 import { AvailabilityForm } from "./availability-form";
 import Link from "next/link";
 import {
-  Phone,
   User,
   AlertTriangle,
   ChevronRight,
@@ -36,7 +35,7 @@ export default async function ProfessionalDashboard() {
     address: true,
     neighborhood: true,
     city: true,
-    client: { select: { phone: true, user: { select: { name: true } } } },
+    client: { select: { user: { select: { name: true } } } },
   } as const;
 
   const shiftSelect = {
@@ -162,15 +161,6 @@ export default async function ProfessionalDashboard() {
                           <User className="h-3.5 w-3.5 text-slate-400" />
                           Familiar: {s.patient.client.user.name}
                         </span>
-                        {s.patient.client.phone && (
-                          <a
-                            href={`tel:${s.patient.client.phone}`}
-                            className="flex items-center gap-1 text-xs text-blue-700 hover:underline"
-                          >
-                            <Phone className="h-3.5 w-3.5" />
-                            {s.patient.client.phone}
-                          </a>
-                        )}
                       </div>
                       {s.needs && (
                         <p className="mt-2 text-sm text-slate-600 line-clamp-2">
@@ -236,15 +226,6 @@ export default async function ProfessionalDashboard() {
                           <User className="h-3.5 w-3.5 text-slate-400" />
                           Familiar: {s.patient.client.user.name}
                         </span>
-                        {s.patient.client.phone && (
-                          <a
-                            href={`tel:${s.patient.client.phone}`}
-                            className="flex items-center gap-1 text-xs text-blue-700 hover:underline"
-                          >
-                            <Phone className="h-3.5 w-3.5" />
-                            {s.patient.client.phone}
-                          </a>
-                        )}
                       </div>
                     </div>
                     <StatusBadge status={s.status as ShiftStatus} />

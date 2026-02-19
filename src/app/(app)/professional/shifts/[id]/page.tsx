@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/ui/badge";
 import { formatDateTime, shiftEventTypeLabel } from "@/lib/utils";
 import type { ShiftStatus } from "@/types";
 import Link from "next/link";
-import { Phone, User, Clock, MapPin, AlertTriangle } from "lucide-react";
+import { User, Clock, MapPin, AlertTriangle } from "lucide-react";
 import { ProfessionalShiftActions } from "./shift-actions";
 
 export default async function ProfessionalShiftDetail({
@@ -32,7 +32,7 @@ export default async function ProfessionalShiftDetail({
           medicalNotes: true,
           allergies: true,
           medications: true,
-          client: { select: { phone: true, user: { select: { name: true } } } },
+          client: { select: { user: { select: { name: true } } } },
         },
       },
       events: {
@@ -109,15 +109,9 @@ export default async function ProfessionalShiftDetail({
                 <div>
                   <p className="text-xs font-medium uppercase text-slate-500">Familiar</p>
                   <p className="text-slate-900">{shift.patient.client.user.name}</p>
-                  {shift.patient.client.phone && (
-                    <a
-                      href={`tel:${shift.patient.client.phone}`}
-                      className="flex items-center gap-1 text-blue-700 hover:underline"
-                    >
-                      <Phone className="h-3.5 w-3.5" />
-                      {shift.patient.client.phone}
-                    </a>
-                  )}
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Em caso de dúvidas, entre em contato com a equipe EPAD.
+                  </p>
                 </div>
               </div>
             </div>
