@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import type { SessionUser, ShiftStatus } from "@/types";
 import type { CreateShiftInput } from "@/lib/validators/shift";
 import { canTransition } from "@/lib/utils";
+import { recalcProfessionalCounters } from "@/services/professional.service";
 
 export async function listShifts(user: SessionUser) {
   const shiftSelect = {
@@ -147,9 +148,12 @@ export async function assignShift(
     // Check professional type matches shift requirement
     const professional = await tx.professionalProfile.findUnique({
       where: { id: professionalProfileId },
-      select: { professionalType: true },
+      select: { professionalType: true, status: true },
     });
     if (!professional) throw new Error("Profissional não encontrado");
+    if (professional.status !== "ACTIVE") {
+      throw new Error("Profissional suspenso ou inativo não pode aceitar plantões");
+    }
     if (shift.requiredProfessionalType !== professional.professionalType) {
       throw new Error(
         `Este plantão requer um profissional do tipo ${shift.requiredProfessionalType}`,
@@ -219,6 +223,21 @@ export async function adminAssignShift(
       throw new Error("Apenas plantões abertos podem receber atribuição");
     }
 
+    // Check professional exists, type and status
+    const professional = await tx.professionalProfile.findUnique({
+      where: { id: professionalProfileId },
+      select: { professionalType: true, status: true },
+    });
+    if (!professional) throw new Error("Profissional não encontrado");
+    if (professional.status !== "ACTIVE") {
+      throw new Error("Profissional suspenso ou inativo não pode ser atribuído");
+    }
+    if (shift.requiredProfessionalType !== professional.professionalType) {
+      throw new Error(
+        `Este plantão requer um profissional do tipo ${shift.requiredProfessionalType}`,
+      );
+    }
+
     // Check for schedule conflicts
     const conflict = await tx.shift.findFirst({
       where: {
@@ -274,7 +293,7 @@ export async function transitionShift(
   actorUserId: string,
   extra?: { cancelReason?: string; description?: string },
 ) {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const shift = await tx.shift.findUnique({ where: { id: shiftId } });
     if (!shift) throw new Error("Plantão não encontrado");
 
@@ -344,6 +363,12 @@ export async function transitionShift(
 
     return updated;
   });
+
+  if (toStatus === "COMPLETED" && result.professionalId) {
+    await recalcProfessionalCounters(result.professionalId);
+  }
+
+  return result;
 }
 
 /**
@@ -390,7 +415,7 @@ export async function adminUnassignShift(
         entityType: "SHIFT",
         entityId: shiftId,
         beforeJson,
-        afterJson: JSON.stringify({ status: "OPEN", professionalId: null }),
+        afterJson: JSON.stringify({ status: updated.status, professionalId: null }),
         reason,
       },
     });
@@ -489,6 +514,10 @@ export async function adminAdjustValue(
     const existingAdjustments = shift.adjustmentsCents ?? 0;
     const newAdjustmentsCents = existingAdjustments + adjustmentsCents;
     const totalValueCents = baseValue + newAdjustmentsCents;
+
+    if (totalValueCents < 0) {
+      throw new Error("O valor total do plantão não pode ser negativo");
+    }
 
     const beforeJson = JSON.stringify({
       value: shift.value,

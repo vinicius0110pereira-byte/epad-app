@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, shiftEventTypeLabel } from "@/lib/utils";
 import type { ShiftStatus } from "@/types";
 import { FeedbackForm } from "./feedback-form";
 import Link from "next/link";
@@ -47,7 +47,7 @@ export default async function ClientShiftDetail({
     <div>
       <Link
         href="/client/dashboard"
-        className="mb-4 inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+        className="mb-4 inline-flex items-center text-sm text-slate-500 hover:text-slate-700"
       >
         &larr; Voltar
       </Link>
@@ -57,14 +57,14 @@ export default async function ClientShiftDetail({
           <Card>
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-xl font-bold text-gray-900">
+                <h1 className="text-xl font-bold text-slate-900">
                   Atendimento - {shift.patient.fullName}
                 </h1>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-slate-500">
                   {formatDateTime(shift.startDateTime)} — {formatDateTime(shift.endDateTime)}
                 </p>
                 {shift.professional && (
-                  <p className="mt-2 text-sm text-gray-700">
+                  <p className="mt-2 text-sm text-slate-700">
                     Profissional: <span className="font-medium">{shift.professional.user.name}</span>
                   </p>
                 )}
@@ -75,11 +75,11 @@ export default async function ClientShiftDetail({
 
           {/* Timeline de eventos (read-only) */}
           <Card>
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">
               Acompanhamento
             </h2>
             {shift.events.length === 0 ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-500">
                 Nenhum evento registrado ainda.
               </p>
             ) : (
@@ -91,15 +91,15 @@ export default async function ClientShiftDetail({
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                          {event.type}
+                        <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                          {shiftEventTypeLabel(event.type)}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-slate-400">
                           {formatDateTime(event.createdAt)}
                         </span>
                       </div>
                       {event.description && (
-                        <p className="mt-1 text-sm text-gray-700">
+                        <p className="mt-1 text-sm text-slate-700">
                           {event.description}
                         </p>
                       )}
@@ -115,7 +115,7 @@ export default async function ClientShiftDetail({
         <div>
           {canFeedback && (
             <Card>
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">
+              <h2 className="mb-4 text-lg font-semibold text-slate-900">
                 Avaliar Atendimento
               </h2>
               <FeedbackForm shiftId={shift.id} />
@@ -123,7 +123,7 @@ export default async function ClientShiftDetail({
           )}
           {shift.feedbacks.length > 0 && (
             <Card>
-              <h2 className="mb-3 text-lg font-semibold text-gray-900">
+              <h2 className="mb-3 text-lg font-semibold text-slate-900">
                 Sua Avaliação
               </h2>
               <div className="flex items-center gap-1">
@@ -133,7 +133,7 @@ export default async function ClientShiftDetail({
                     className={`text-xl ${
                       star <= shift.feedbacks[0].rating
                         ? "text-yellow-400"
-                        : "text-gray-300"
+                        : "text-slate-300"
                     }`}
                   >
                     ★
@@ -141,7 +141,7 @@ export default async function ClientShiftDetail({
                 ))}
               </div>
               {shift.feedbacks[0].notes && (
-                <p className="mt-2 text-sm text-gray-700">
+                <p className="mt-2 text-sm text-slate-700">
                   {shift.feedbacks[0].notes}
                 </p>
               )}

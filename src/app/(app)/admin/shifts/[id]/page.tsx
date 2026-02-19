@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card, SectionCard } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
-import { formatDateTime, formatCurrency } from "@/lib/utils";
+import { formatDateTime, formatCurrency, shiftEventTypeLabel } from "@/lib/utils";
 import type { ShiftStatus } from "@/types";
 import {
   ArrowLeft,
@@ -101,7 +101,7 @@ export default async function AdminShiftDetailPage({
 
   if (canAssign) {
     const profs = await prisma.professionalProfile.findMany({
-      where: { approved: true },
+      where: { approved: true, status: "ACTIVE" },
       include: {
         user: { select: { name: true } },
         shifts: {
@@ -381,7 +381,7 @@ export default async function AdminShiftDetailPage({
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
-                          {event.type}
+                          {shiftEventTypeLabel(event.type)}
                         </span>
                         <span className="text-xs text-slate-400">
                           {formatDateTime(event.createdAt)}

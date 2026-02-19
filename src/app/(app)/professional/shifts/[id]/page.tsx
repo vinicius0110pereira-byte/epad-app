@@ -3,10 +3,11 @@ import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, shiftEventTypeLabel } from "@/lib/utils";
 import type { ShiftStatus } from "@/types";
 import Link from "next/link";
 import { Phone, User, Clock, MapPin, AlertTriangle } from "lucide-react";
+import { ProfessionalShiftActions } from "./shift-actions";
 
 export default async function ProfessionalShiftDetail({
   params,
@@ -78,7 +79,15 @@ export default async function ProfessionalShiftDetail({
             {formatDateTime(shift.startDateTime)} — {formatDateTime(shift.endDateTime)}
           </p>
         </div>
-        <StatusBadge status={shift.status as ShiftStatus} />
+        <div className="flex items-center gap-3">
+          <StatusBadge status={shift.status as ShiftStatus} />
+          {shift.professionalId === session.user.professionalProfileId && (
+            <ProfessionalShiftActions
+              shiftId={shift.id}
+              status={shift.status as ShiftStatus}
+            />
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -137,7 +146,7 @@ export default async function ProfessionalShiftDetail({
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
-                          {event.type}
+                          {shiftEventTypeLabel(event.type)}
                         </span>
                         <span className="text-xs text-slate-400">
                           {formatDateTime(event.createdAt)}

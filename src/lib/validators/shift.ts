@@ -79,7 +79,7 @@ export const adjustValueSchema = z.object({
 export type AdjustValueInput = z.infer<typeof adjustValueSchema>;
 
 export const addNoteSchema = z.object({
-  note: z.string().min(1, "Nota é obrigatória"),
+  note: z.string().min(1, "Nota é obrigatória").max(2000, "Nota não pode ter mais de 2000 caracteres"),
 });
 
 export type AddNoteInput = z.infer<typeof addNoteSchema>;

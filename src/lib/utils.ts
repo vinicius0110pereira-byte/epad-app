@@ -4,7 +4,7 @@ import { type ShiftStatus, type ProfessionalStatus } from "@/types";
  * Transições válidas da máquina de estados do Shift
  */
 export const SHIFT_TRANSITIONS: Record<ShiftStatus, ShiftStatus[]> = {
-  OPEN: ["OFFERED", "ASSIGNED", "ACCEPTED", "CANCELLED"],
+  OPEN: ["OFFERED", "ASSIGNED", "ACCEPTED", "CANCELLED", "URGENT_OPEN"],
   OFFERED: ["ACCEPTED", "OPEN", "CANCELLED"],
   ASSIGNED: ["ACCEPTED", "OPEN", "CANCELLED"],
   ACCEPTED: ["CONFIRMED", "CANCELLED"],
@@ -12,7 +12,7 @@ export const SHIFT_TRANSITIONS: Record<ShiftStatus, ShiftStatus[]> = {
   IN_PROGRESS: ["COMPLETED", "NO_SHOW", "CANCELLED"],
   COMPLETED: ["VERIFIED"],
   VERIFIED: [],
-  CANCELLED: ["URGENT_OPEN"],
+  CANCELLED: [],
   NO_SHOW: ["OPEN", "CANCELLED"],
   URGENT_OPEN: ["OFFERED", "ASSIGNED", "ACCEPTED", "CANCELLED"],
 };
@@ -73,6 +73,39 @@ export function shiftStatusLabel(status: ShiftStatus): string {
     URGENT_OPEN: "Urgente",
   };
   return map[status] ?? status;
+}
+
+/**
+ * Label legível para tipo de evento do shift
+ */
+export function shiftEventTypeLabel(type: string): string {
+  const map: Record<string, string> = {
+    CREATED: "Criado",
+    ACCEPTED: "Aceito",
+    CONFIRMED: "Confirmado",
+    STARTED: "Iniciado",
+    FINISHED: "Finalizado",
+    CANCELLED: "Cancelado",
+    LATE: "Atraso",
+    OCCURRENCE: "Ocorrência",
+    MED_REQUEST: "Requisição de Medicamento",
+    RESOLVED: "Resolvido",
+    OFFERED: "Oferecido",
+    ASSIGNED: "Atribuído",
+    UNASSIGNED: "Desatribuído",
+    VERIFIED: "Verificado",
+    NO_SHOW: "Ausência",
+    RESCHEDULED: "Reagendado",
+    VALUE_ADJUSTED: "Ajuste de Valor",
+    NOTE_ADDED: "Nota Adicionada",
+    PATIENT_FALL: "Queda do Paciente",
+    MEDICATION_GIVEN: "Medicamento Administrado",
+    VITAL_SIGNS: "Sinais Vitais",
+    MEAL: "Refeição",
+    HYGIENE: "Higiene",
+    EMERGENCY: "Emergência",
+  };
+  return map[type] ?? type;
 }
 
 /**
