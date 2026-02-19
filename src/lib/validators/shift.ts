@@ -11,7 +11,10 @@ export const createShiftSchema = z.object({
   value: z.number().int().min(0).optional().nullable(),
   patientId: z.string().uuid("ID do paciente inválido"),
   isUrgent: z.boolean().optional().default(false),
-});
+}).refine(
+  (data) => new Date(data.endDateTime) > new Date(data.startDateTime),
+  { message: "Data de término deve ser posterior à data de início", path: ["endDateTime"] },
+);
 
 export type CreateShiftInput = z.infer<typeof createShiftSchema>;
 

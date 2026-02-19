@@ -144,6 +144,18 @@ export async function assignShift(
       throw new Error(`Plantão com status "${status}" não pode ser aceito`);
     }
 
+    // Check professional type matches shift requirement
+    const professional = await tx.professionalProfile.findUnique({
+      where: { id: professionalProfileId },
+      select: { professionalType: true },
+    });
+    if (!professional) throw new Error("Profissional não encontrado");
+    if (shift.requiredProfessionalType !== professional.professionalType) {
+      throw new Error(
+        `Este plantão requer um profissional do tipo ${shift.requiredProfessionalType}`,
+      );
+    }
+
     // Check for schedule conflicts
     const conflict = await tx.shift.findFirst({
       where: {
@@ -362,7 +374,7 @@ export async function adminUnassignShift(
     const updated = await tx.shift.update({
       where: { id: shiftId },
       data: {
-        status: "OPEN",
+        status: shift.isUrgent ? "URGENT_OPEN" : "OPEN",
         professionalId: null,
         acceptedAt: null,
         confirmedAt: null,
@@ -474,7 +486,9 @@ export async function adminAdjustValue(
     if (!shift) throw new Error("Plantão não encontrado");
 
     const baseValue = shift.value ?? 0;
-    const totalValueCents = baseValue + adjustmentsCents;
+    const existingAdjustments = shift.adjustmentsCents ?? 0;
+    const newAdjustmentsCents = existingAdjustments + adjustmentsCents;
+    const totalValueCents = baseValue + newAdjustmentsCents;
 
     const beforeJson = JSON.stringify({
       value: shift.value,
@@ -485,7 +499,7 @@ export async function adminAdjustValue(
     const updated = await tx.shift.update({
       where: { id: shiftId },
       data: {
-        adjustmentsCents,
+        adjustmentsCents: newAdjustmentsCents,
         totalValueCents,
       },
     });

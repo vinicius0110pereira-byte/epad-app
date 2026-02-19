@@ -88,7 +88,7 @@ export default async function AdminReportsPage({ searchParams }: Props) {
   // Group by professional
   const byProfessional = new Map<
     string,
-    { name: string; count: number; total: number }
+    { id: string; name: string; count: number; total: number }
   >();
 
   for (const s of shifts) {
@@ -101,6 +101,7 @@ export default async function AdminReportsPage({ searchParams }: Props) {
       existing.total += val;
     } else {
       byProfessional.set(key, {
+        id: key,
         name: s.professional.user.name || "Sem nome",
         count: 1,
         total: val,
@@ -115,7 +116,7 @@ export default async function AdminReportsPage({ searchParams }: Props) {
   // Group by patient
   const byPatient = new Map<
     string,
-    { name: string; count: number; total: number }
+    { id: string; name: string; count: number; total: number }
   >();
 
   for (const s of shifts) {
@@ -127,6 +128,7 @@ export default async function AdminReportsPage({ searchParams }: Props) {
       existing.total += val;
     } else {
       byPatient.set(key, {
+        id: key,
         name: s.patient.fullName,
         count: 1,
         total: val,
@@ -248,7 +250,7 @@ export default async function AdminReportsPage({ searchParams }: Props) {
                 <tbody>
                   {professionalRows.map((row) => (
                     <tr
-                      key={row.name}
+                      key={row.id}
                       className="border-b border-slate-50 last:border-0"
                     >
                       <td className="py-2 font-medium text-slate-900">
@@ -299,7 +301,7 @@ export default async function AdminReportsPage({ searchParams }: Props) {
                 <tbody>
                   {patientRows.map((row) => (
                     <tr
-                      key={row.name}
+                      key={row.id}
                       className="border-b border-slate-50 last:border-0"
                     >
                       <td className="py-2 font-medium text-slate-900">

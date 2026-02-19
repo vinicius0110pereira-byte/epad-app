@@ -23,6 +23,13 @@ export async function POST(request: Request) {
 
     const { currentPassword, newPassword } = parsed.data;
 
+    if (currentPassword === newPassword) {
+      return Response.json(
+        { error: "A nova senha deve ser diferente da senha atual" },
+        { status: 400 },
+      );
+    }
+
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
       select: { passwordHash: true },

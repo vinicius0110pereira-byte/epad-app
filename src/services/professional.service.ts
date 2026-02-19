@@ -97,12 +97,7 @@ export async function updateProfessionalStatus(
   // For professional status changes, we store it as an event on the first available shift
   // or we skip if there are no shifts
   const anyShift = await prisma.shift.findFirst({
-    where: {
-      OR: [
-        { professionalId: id },
-        { createdByAdminId: adminUserId },
-      ],
-    },
+    where: { professionalId: id },
     orderBy: { createdAt: "desc" },
   });
 
