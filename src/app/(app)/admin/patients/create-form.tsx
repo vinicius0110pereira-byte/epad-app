@@ -16,7 +16,9 @@ export function AdminCreatePatientForm() {
     setLoading(true);
     setError("");
 
-    const form = new FormData(e.currentTarget);
+    // Salvar referência antes do await — após yield o DOM anula e.currentTarget
+    const formElement = e.currentTarget;
+    const form = new FormData(formElement);
 
     try {
       const res = await fetch("/api/patients", {
@@ -33,12 +35,12 @@ export function AdminCreatePatientForm() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         setError(data.error || "Erro ao criar paciente");
         return;
       }
 
-      e.currentTarget.reset();
+      formElement.reset();
       router.refresh();
     } catch {
       setError("Erro de conexão");

@@ -50,7 +50,8 @@ export function AddEventForm({ shiftId }: Props) {
     setError("");
     setSuccess(false);
 
-    const form = new FormData(e.currentTarget);
+    const formElement = e.currentTarget;
+    const form = new FormData(formElement);
     const severity = form.get("severity") as string;
 
     try {
@@ -71,7 +72,7 @@ export function AddEventForm({ shiftId }: Props) {
       }
 
       setSuccess(true);
-      e.currentTarget.reset();
+      formElement.reset();
       router.refresh();
       setTimeout(() => setSuccess(false), 3000);
     } catch {

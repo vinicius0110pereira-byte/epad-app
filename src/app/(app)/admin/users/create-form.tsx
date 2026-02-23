@@ -18,7 +18,8 @@ export function CreateUserForm() {
     e.preventDefault();
     setLoading(true);
 
-    const form = new FormData(e.currentTarget);
+    const formElement = e.currentTarget;
+    const form = new FormData(formElement);
     const name = form.get("name") as string;
 
     try {
@@ -47,7 +48,7 @@ export function CreateUserForm() {
       if (data.professionalProfileId) {
         setCreatedProfile({ id: data.professionalProfileId, name });
       } else {
-        e.currentTarget.reset();
+        formElement.reset();
         setRole("CLIENT");
         router.refresh();
       }

@@ -28,7 +28,9 @@ export function AdminCreateShiftForm({ patients }: Props) {
     setLoading(true);
     setError("");
 
-    const form = new FormData(e.currentTarget);
+    // Salvar referência antes do await — após yield o DOM anula e.currentTarget
+    const formElement = e.currentTarget;
+    const form = new FormData(formElement);
     const value = form.get("value");
 
     try {
@@ -47,22 +49,15 @@ export function AdminCreateShiftForm({ patients }: Props) {
       });
 
       if (!res.ok) {
-        let msg = `Erro ${res.status}`;
-        try {
-          const data = await res.json();
-          msg = data.error || msg;
-        } catch {
-          const text = await res.text().catch(() => "");
-          msg = `Erro ${res.status}: ${text.slice(0, 200) || "sem detalhe"}`;
-        }
-        setError(msg);
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Erro ao criar plantão");
         return;
       }
 
-      e.currentTarget.reset();
+      formElement.reset();
       router.refresh();
-    } catch (err) {
-      setError(`Erro de conexão: ${err instanceof Error ? err.message : String(err)}`);
+    } catch {
+      setError("Erro de conexão");
     } finally {
       setLoading(false);
     }
