@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card, SectionCard } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { formatDateTime, formatDate, ZONA_LABELS, getInitials } from "@/lib/utils";
+import { formatDateTime, formatDate, ZONA_LABELS } from "@/lib/utils";
 import { SEXO_LABELS } from "@/lib/validators/patient";
 import type { ShiftStatus } from "@/types";
 import {
@@ -222,7 +222,7 @@ export default async function AdminPatientDetailPage({
                       </p>
                       <p className="text-xs text-slate-500">
                         {s.professional
-                          ? getInitials(s.professional.user.name)
+                          ? s.professional.user.name
                           : "Sem profissional"}
                       </p>
                     </div>
@@ -255,7 +255,7 @@ export default async function AdminPatientDetailPage({
                         {formatDateTime(s.startDateTime)}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {s.professional ? getInitials(s.professional.user.name) : "—"}
+                        {s.professional ? s.professional.user.name : "—"}
                       </p>
                     </div>
                     <StatusBadge status={s.status as ShiftStatus} />
