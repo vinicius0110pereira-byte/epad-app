@@ -1,9 +1,13 @@
 import "dotenv/config";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-const adapter = new PrismaLibSql({ url: process.env["DATABASE_URL"] as string });
+const url = process.env["DATABASE_URL"] as string;
+const adapter = url.startsWith("file:")
+  ? new PrismaLibSql({ url })
+  : new PrismaPg({ connectionString: url });
 const prisma = new PrismaClient({ adapter, log: ["error"] });
 
 // Same algorithm as src/lib/password.ts — bcryptjs, 10 rounds.
