@@ -3,7 +3,7 @@
 // ==============================================
 
 // Enums como union types (SQLite não suporta enum nativo)
-export type UserRole = "ADMIN" | "PROFESSIONAL" | "CLIENT";
+export type UserRole = "ADMIN" | "PROFESSIONAL";
 
 export type ProfessionalType = "CAREGIVER" | "NURSE" | "TECHNICIAN" | "OTHER";
 
@@ -40,7 +40,7 @@ export type EventType =
   | "VALUE_ADJUSTED"
   | "NOTE_ADDED";
 
-export type FeedbackRole = "PROFESSIONAL" | "CLIENT" | "ADMIN";
+export type FeedbackRole = "PROFESSIONAL" | "ADMIN";
 
 export type ProfessionalStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED" | "PENDING";
 
@@ -49,16 +49,12 @@ export interface PatientDTO {
   id: string;
   fullName: string;
   birthDate: string | null;
-  address: string;
-  neighborhood: string | null;
-  city: string | null;
-  state: string | null;
-  zipCode: string | null;
-  medicalNotes?: string | null; // Omitido para CLIENT
-  medications?: string | null; // Omitido para CLIENT
+  bairro: string;
+  zona: string;
+  grauComplexidade: string;
+  medications?: string | null;
   allergies?: string | null;
   active: boolean;
-  clientId: string;
 }
 
 export interface ShiftDTO {
@@ -66,13 +62,11 @@ export interface ShiftDTO {
   startDateTime: string;
   endDateTime: string;
   requiredProfessionalType: ProfessionalType;
-  address: string;
-  neighborhood: string | null;
-  city: string | null;
   needs: string | null;
-  value?: number | null; // Omitido para CLIENT e PROFESSIONAL
+  value?: number | null; // Omitido para PROFESSIONAL
   status: ShiftStatus;
   isUrgent: boolean;
+  contatoConfirmado: boolean;
   patientId: string;
   professionalId: string | null;
   createdByAdminId: string;
@@ -120,5 +114,4 @@ export interface SessionUser {
   name: string | null;
   role: UserRole;
   professionalProfileId?: string | null;
-  clientProfileId?: string | null;
 }

@@ -1,10 +1,10 @@
+import "dotenv/config";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
-const connectionString = process.env.DATABASE_URL!;
-const adapter = new PrismaPg({ connectionString });
-const prisma = new PrismaClient({ adapter });
+const adapter = new PrismaLibSql({ url: process.env["DATABASE_URL"] as string });
+const prisma = new PrismaClient({ adapter, log: ["error"] });
 
 // Same algorithm as src/lib/password.ts — bcryptjs, 10 rounds.
 // Duplicated here because seed runs outside Next.js bundler (via tsx).
@@ -16,14 +16,13 @@ async function main() {
   console.log("🌱 Seeding database...");
 
   // Limpar dados existentes (ordem importa por FK)
+  await prisma.notification.deleteMany();
   await prisma.feedback.deleteMany();
   await prisma.shiftEvent.deleteMany();
   await prisma.shift.deleteMany();
-  await prisma.shiftRequest.deleteMany();
   await prisma.availability.deleteMany();
   await prisma.patient.deleteMany();
   await prisma.professionalProfile.deleteMany();
-  await prisma.clientProfile.deleteMany();
   await prisma.user.deleteMany();
 
   // ========== USERS ==========
@@ -82,61 +81,19 @@ async function main() {
   });
   console.log(`  ✅ Professional 2: ${prof2User.email}`);
 
-  const client1User = await prisma.user.create({
-    data: {
-      email: "client1@epad.test",
-      passwordHash: await hashPassword("Client123!"),
-      name: "Maria Familiar",
-      role: "CLIENT",
-      active: true,
-    },
-  });
-
-  const client1Profile = await prisma.clientProfile.create({
-    data: {
-      userId: client1User.id,
-      phone: "(11) 98888-0001",
-      document: "123.456.789-00",
-    },
-  });
-  console.log(`  ✅ Client 1: ${client1User.email}`);
-
-  const client2User = await prisma.user.create({
-    data: {
-      email: "client2@epad.test",
-      passwordHash: await hashPassword("Client123!"),
-      name: "João Familiar",
-      role: "CLIENT",
-      active: true,
-    },
-  });
-
-  const client2Profile = await prisma.clientProfile.create({
-    data: {
-      userId: client2User.id,
-      phone: "(11) 98888-0002",
-      document: "987.654.321-00",
-    },
-  });
-  console.log(`  ✅ Client 2: ${client2User.email}`);
-
   // ========== PATIENTS ==========
   const patient1 = await prisma.patient.create({
     data: {
       fullName: "Dona Rosa Silva",
       birthDate: new Date("1940-03-15"),
-      address: "Rua das Flores, 123",
-      neighborhood: "Jardim Paulista",
-      city: "São Paulo",
-      state: "SP",
-      zipCode: "01234-000",
-      medicalNotes: "Hipertensão controlada. Necessita auxílio para locomoção.",
+      bairro: "Jardim Paulista",
+      zona: "SUL",
+      grauComplexidade: "2",
       medications: JSON.stringify([
         { name: "Losartana", dose: "50mg", frequency: "12h" },
         { name: "AAS", dose: "100mg", frequency: "24h" },
       ]),
       allergies: "Dipirona",
-      clientId: client1Profile.id,
     },
   });
   console.log(`  ✅ Patient 1: ${patient1.fullName}`);
@@ -145,18 +102,14 @@ async function main() {
     data: {
       fullName: "Sr. Pedro Santos",
       birthDate: new Date("1935-07-22"),
-      address: "Av. Brasil, 456",
-      neighborhood: "Vila Mariana",
-      city: "São Paulo",
-      state: "SP",
-      zipCode: "04321-000",
-      medicalNotes: "Pós-operatório de fratura de fêmur. Repouso absoluto.",
+      bairro: "Vila Mariana",
+      zona: "SUL",
+      grauComplexidade: "3",
       medications: JSON.stringify([
         { name: "Paracetamol", dose: "750mg", frequency: "6h" },
         { name: "Enoxaparina", dose: "40mg", frequency: "24h" },
       ]),
       allergies: null,
-      clientId: client1Profile.id,
     },
   });
   console.log(`  ✅ Patient 2: ${patient2.fullName}`);
@@ -165,17 +118,13 @@ async function main() {
     data: {
       fullName: "Dona Lúcia Oliveira",
       birthDate: new Date("1945-11-08"),
-      address: "Rua Augusta, 789",
-      neighborhood: "Consolação",
-      city: "São Paulo",
-      state: "SP",
-      zipCode: "01305-000",
-      medicalNotes: "Alzheimer estágio inicial. Necessita supervisão constante.",
+      bairro: "Consolação",
+      zona: "CENTRO",
+      grauComplexidade: "2",
       medications: JSON.stringify([
         { name: "Donepezila", dose: "10mg", frequency: "24h" },
       ]),
       allergies: "Penicilina",
-      clientId: client2Profile.id,
     },
   });
   console.log(`  ✅ Patient 3: ${patient3.fullName}`);
@@ -197,9 +146,6 @@ async function main() {
       startDateTime: new Date(twoDaysAgo.setHours(8, 0, 0, 0)),
       endDateTime: new Date(twoDaysAgo.setHours(20, 0, 0, 0)),
       requiredProfessionalType: "CAREGIVER",
-      address: patient1.address,
-      neighborhood: patient1.neighborhood,
-      city: patient1.city,
       needs: "Auxílio com alimentação e higiene pessoal",
       value: 25000, // R$ 250,00
       status: "COMPLETED",
@@ -219,9 +165,6 @@ async function main() {
       startDateTime: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 7, 0, 0),
       endDateTime: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 19, 0, 0),
       requiredProfessionalType: "NURSE",
-      address: patient2.address,
-      neighborhood: patient2.neighborhood,
-      city: patient2.city,
       needs: "Curativo e administração de medicação injetável",
       value: 35000, // R$ 350,00
       status: "IN_PROGRESS",
@@ -240,9 +183,6 @@ async function main() {
       startDateTime: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 8, 0, 0),
       endDateTime: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 20, 0, 0),
       requiredProfessionalType: "CAREGIVER",
-      address: patient3.address,
-      neighborhood: patient3.neighborhood,
-      city: patient3.city,
       needs: "Companhia e supervisão. Paciente com tendência a sair de casa.",
       value: 22000, // R$ 220,00
       status: "OPEN",
@@ -258,9 +198,6 @@ async function main() {
       startDateTime: new Date(dayAfter.getFullYear(), dayAfter.getMonth(), dayAfter.getDate(), 8, 0, 0),
       endDateTime: new Date(dayAfter.getFullYear(), dayAfter.getMonth(), dayAfter.getDate(), 20, 0, 0),
       requiredProfessionalType: "CAREGIVER",
-      address: patient1.address,
-      neighborhood: patient1.neighborhood,
-      city: patient1.city,
       needs: "Auxílio geral e fisioterapia passiva",
       value: 25000,
       status: "ACCEPTED",
@@ -278,9 +215,6 @@ async function main() {
       startDateTime: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 20, 0, 0),
       endDateTime: new Date(dayAfter.getFullYear(), dayAfter.getMonth(), dayAfter.getDate(), 8, 0, 0),
       requiredProfessionalType: "NURSE",
-      address: patient2.address,
-      neighborhood: patient2.neighborhood,
-      city: patient2.city,
       needs: "Plantão noturno. Monitorar sinais vitais.",
       value: 40000, // R$ 400,00
       status: "OPEN",
@@ -373,31 +307,24 @@ async function main() {
   await prisma.feedback.create({
     data: {
       shiftId: shift1.id,
-      userId: client1User.id,
-      fromRole: "CLIENT",
-      rating: 5,
-      notes: "Excelente profissional! Muito atencioso e cuidadoso com minha mãe.",
-    },
-  });
-
-  await prisma.feedback.create({
-    data: {
-      shiftId: shift1.id,
       userId: prof1User.id,
       fromRole: "PROFESSIONAL",
       rating: 4,
-      notes: "Paciente colaborativa. Família presente e atenciosa.",
+      notes: "Paciente colaborativa. Atendimento tranquilo.",
     },
   });
-  console.log(`  ✅ 2 feedbacks criados`);
+  console.log(`  ✅ 1 feedback criado`);
+
+  // suppress unused variable warnings
+  void shift3;
+  void shift4;
+  void shift5;
 
   console.log("\n✅ Seed concluído com sucesso!");
   console.log("\n📋 Usuários de teste:");
   console.log("   ADMIN:        admin@epad.test / Admin123!");
   console.log("   PROFESSIONAL: professional1@epad.test / Prof123!");
   console.log("   PROFESSIONAL: professional2@epad.test / Prof123!");
-  console.log("   CLIENT:       client1@epad.test / Client123!");
-  console.log("   CLIENT:       client2@epad.test / Client123!");
 }
 
 main()

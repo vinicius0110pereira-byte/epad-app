@@ -38,6 +38,9 @@ yarn-error.log*
 # database
 *.db
 
+# Local dev schema (sqlite) - nao commitar
+prisma/schema.dev.prisma
+
 # vercel
 .vercel
 
@@ -50,3 +53,5 @@ next-env.d.ts
 # uploads
 /public/uploads/
 nul
+
+.vercel

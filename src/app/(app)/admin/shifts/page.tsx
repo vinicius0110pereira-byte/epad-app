@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { formatDateTime, formatCurrency } from "@/lib/utils";
+import { formatDateTime, formatCurrency, ZONA_LABELS } from "@/lib/utils";
 import type { ShiftStatus } from "@/types";
 import type { Prisma } from "@prisma/client";
 
@@ -84,12 +84,10 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
         startDateTime: true,
         endDateTime: true,
         status: true,
-        address: true,
-        neighborhood: true,
         isUrgent: true,
         value: true,
         professionalId: true,
-        patient: { select: { fullName: true } },
+        patient: { select: { fullName: true, bairro: true, zona: true } },
         professional: { select: { user: { select: { name: true } } } },
       },
       orderBy: { startDateTime: "desc" },
@@ -103,7 +101,7 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
   const [patients, professionals] = await Promise.all([
     prisma.patient.findMany({
       where: { active: true },
-      select: { id: true, fullName: true, address: true, neighborhood: true, city: true },
+      select: { id: true, fullName: true, bairro: true, zona: true },
       orderBy: { fullName: "asc" },
       take: 500,
     }),
@@ -146,7 +144,7 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           {/* Filters */}
-          <form className="mb-5 rounded-xl border border-slate-200 bg-white p-4">
+          <form className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {/* Search */}
               <div className="sm:col-span-2 lg:col-span-3">
@@ -159,7 +157,7 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
                     name="q"
                     defaultValue={q}
                     placeholder="Paciente ou profissional..."
-                    className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-200 py-2.5 pl-9 pr-3 text-sm transition-all hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                   />
                 </div>
               </div>
@@ -172,7 +170,7 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
                 <select
                   name="status"
                   defaultValue={status}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm transition-all hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 >
                   {STATUS_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -191,7 +189,7 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
                   name="from"
                   type="date"
                   defaultValue={from}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm transition-all hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
@@ -204,7 +202,7 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
                   name="to"
                   type="date"
                   defaultValue={to}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm transition-all hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
@@ -216,7 +214,7 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
                 <select
                   name="prof"
                   defaultValue={profId}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm transition-all hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 >
                   <option value="">Todos</option>
                   {professionals.map((p) => (
@@ -229,7 +227,7 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
 
               {/* Checkboxes */}
               <div className="flex items-end gap-4 sm:col-span-2 lg:col-span-1">
-                <label className="flex items-center gap-2 text-sm text-slate-700">
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
                   <input
                     type="checkbox"
                     name="noprof"
@@ -239,7 +237,7 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
                   />
                   Sem profissional
                 </label>
-                <label className="flex items-center gap-2 text-sm text-slate-700">
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
                   <input
                     type="checkbox"
                     name="urgent"
@@ -256,7 +254,7 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
             <div className="mt-3 flex items-center gap-3 border-t border-slate-100 pt-3">
               <button
                 type="submit"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-b from-blue-700 to-blue-800 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:from-blue-600 hover:to-blue-700 active:scale-[0.97]"
               >
                 <Search className="h-4 w-4" />
                 Filtrar
@@ -264,10 +262,10 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
               {isFiltered && (
                 <Link
                   href="/admin/shifts"
-                  className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 >
                   <X className="h-3.5 w-3.5" />
-                  Limpar filtros
+                  Limpar
                 </Link>
               )}
               <span className="ml-auto text-xs text-slate-400">
@@ -301,21 +299,24 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
                 return (
                   <div
                     key={s.id}
-                    className={`group rounded-xl border bg-white transition-all hover:shadow-md ${
+                    className={`group relative overflow-hidden rounded-xl border bg-white transition-all hover:shadow-md ${
                       s.isUrgent
-                        ? "border-l-4 border-l-red-500 border-t-slate-200 border-r-slate-200 border-b-slate-200"
-                        : "border-slate-200 hover:border-blue-200"
+                        ? "border-red-200 hover:border-red-300 hover:shadow-red-100/60"
+                        : "border-slate-200 hover:border-blue-200 hover:shadow-blue-100/40"
                     } p-4`}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    {s.isUrgent && (
+                      <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-red-400 to-red-600" />
+                    )}
+                    <div className={`flex items-start justify-between gap-3 ${s.isUrgent ? "pl-2" : ""}`}>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-slate-900 truncate">
                             {s.patient.fullName}
                           </p>
                           {s.isUrgent && (
-                            <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                              <AlertTriangle className="h-3 w-3" />
+                            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                              <AlertTriangle className="h-2.5 w-2.5" />
                               Urgente
                             </span>
                           )}
@@ -327,11 +328,11 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
                             {formatDateTime(s.startDateTime)} —{" "}
                             {formatDateTime(s.endDateTime)}
                           </span>
-                          {s.address && (
+                          {s.patient.bairro && (
                             <span className="flex items-center gap-1">
                               <MapPin className="h-3.5 w-3.5" />
-                              {s.address}
-                              {s.neighborhood ? `, ${s.neighborhood}` : ""}
+                              {s.patient.bairro}
+                              {s.patient.zona ? ` — ${ZONA_LABELS[s.patient.zona] ?? s.patient.zona}` : ""}
                             </span>
                           )}
                         </div>
@@ -397,9 +398,8 @@ export default async function AdminShiftsPage({ searchParams }: Props) {
               patients={patients.map((p) => ({
                 id: p.id,
                 name: p.fullName,
-                address: p.address,
-                neighborhood: p.neighborhood ?? "",
-                city: p.city ?? "",
+                bairro: p.bairro,
+                zona: p.zona,
               }))}
             />
           </SectionCard>

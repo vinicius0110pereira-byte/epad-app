@@ -153,3 +153,23 @@ export function professionalStatusColor(status: ProfessionalStatus): string {
   };
   return map[status] ?? "bg-gray-100 text-gray-800";
 }
+
+export const ZONA_LABELS: Record<string, string> = {
+  NORTE: "ZN",
+  SUL: "ZS",
+  LESTE: "ZL",
+  OESTE: "ZO",
+  CENTRO: "ZC",
+};
+
+/**
+ * Máscara de nome para exibição em listas (para PROFESSIONAL).
+ * Ex: "Maria Silva Santos" → "Maria S. – ZS"
+ */
+export function maskPatientName(fullName: string, zona: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  const first = parts[0] ?? "";
+  const lastInitial = parts.length > 1 ? `${parts[parts.length - 1].charAt(0).toUpperCase()}.` : "";
+  const zonaLabel = ZONA_LABELS[zona] ?? zona;
+  return lastInitial ? `${first} ${lastInitial} – ${zonaLabel}` : `${first} – ${zonaLabel}`;
+}

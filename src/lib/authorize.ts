@@ -37,7 +37,6 @@ export async function requireRole(
 /**
  * Verifica se o usuário pode acessar um paciente.
  * ADMIN: sempre pode.
- * CLIENT: apenas se paciente pertence ao seu clientProfile.
  * PROFESSIONAL: apenas se tem shift atribuído para o paciente.
  */
 export async function assertCanAccessPatient(
@@ -45,22 +44,6 @@ export async function assertCanAccessPatient(
   patientId: string,
 ): Promise<void> {
   if (user.role === "ADMIN") return;
-
-  if (user.role === "CLIENT") {
-    if (!user.clientProfileId) {
-      throw new AuthError("Perfil de cliente não encontrado", 403);
-    }
-    const patient = await prisma.patient.findFirst({
-      where: {
-        id: patientId,
-        clientId: user.clientProfileId,
-      },
-    });
-    if (!patient) {
-      throw new AuthError("Paciente não encontrado", 404);
-    }
-    return;
-  }
 
   if (user.role === "PROFESSIONAL") {
     if (!user.professionalProfileId) {
@@ -85,7 +68,6 @@ export async function assertCanAccessPatient(
  * Verifica se o usuário pode acessar um shift.
  * ADMIN: sempre pode.
  * PROFESSIONAL: se assignado ao shift OU shift OPEN/URGENT_OPEN do seu tipo.
- * CLIENT: se o shift pertence a um paciente do seu clientProfile.
  */
 export async function assertCanAccessShift(
   user: SessionUser,
@@ -96,7 +78,6 @@ export async function assertCanAccessShift(
   const shift = await prisma.shift.findUnique({
     where: { id: shiftId },
     include: {
-      patient: { select: { clientId: true } },
       professional: { select: { userId: true } },
     },
   });
@@ -113,14 +94,6 @@ export async function assertCanAccessShift(
     if (shift.professionalId === user.professionalProfileId) return;
     // Pode ver se OPEN ou URGENT_OPEN (para aceitar)
     if (shift.status === "OPEN" || shift.status === "URGENT_OPEN") return;
-    throw new AuthError("Plantão não encontrado", 404);
-  }
-
-  if (user.role === "CLIENT") {
-    if (!user.clientProfileId) {
-      throw new AuthError("Perfil de cliente não encontrado", 403);
-    }
-    if (shift.patient.clientId === user.clientProfileId) return;
     throw new AuthError("Plantão não encontrado", 404);
   }
 

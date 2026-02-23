@@ -35,7 +35,11 @@ export default async function AdminLayout({
 }) {
   const session = await auth();
 
-  if (!session?.user || session.user.role !== "ADMIN") {
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  if (session.user.role !== "ADMIN") {
     redirect("/dashboard");
   }
 
@@ -46,7 +50,7 @@ export default async function AdminLayout({
       <Sidebar userRole="ADMIN" badges={badges} />
       <MobileNav userRole="ADMIN" badges={badges} />
       <div className="lg:pl-60">
-        <Topbar userName={session.user.name} userRole="ADMIN" />
+        <Topbar userName={session.user.name} userRole="ADMIN" userId={session.user.id} />
         <main className="p-4 pb-20 lg:p-6 lg:pb-6">{children}</main>
       </div>
     </>

@@ -4,9 +4,6 @@ export const createShiftSchema = z.object({
   startDateTime: z.string().min(1, "Data de início obrigatória"),
   endDateTime: z.string().min(1, "Data de término obrigatória"),
   requiredProfessionalType: z.enum(["CAREGIVER", "NURSE", "TECHNICIAN", "OTHER"]),
-  address: z.string().min(3, "Endereço é obrigatório"),
-  neighborhood: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
   needs: z.string().optional().nullable(),
   value: z.number().int().min(0).optional().nullable(),
   patientId: z.string().uuid("ID do paciente inválido"),
@@ -89,36 +86,6 @@ export const unassignSchema = z.object({
 });
 
 export type UnassignInput = z.infer<typeof unassignSchema>;
-
-// Client shift request schema
-export const createShiftRequestSchema = z.object({
-  patientId: z.string().uuid("ID do paciente inválido"),
-  preferredStartDateTime: z.string().min(1, "Data de início obrigatória"),
-  preferredEndDateTime: z.string().min(1, "Data de término obrigatória"),
-  requiredProfessionalType: z.enum(["CAREGIVER", "NURSE", "TECHNICIAN", "OTHER"]),
-  needs: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-  isUrgent: z.boolean().optional().default(false),
-});
-
-export type CreateShiftRequestInput = z.infer<typeof createShiftRequestSchema>;
-
-// Client cancel shift schema
-export const clientCancelShiftSchema = z.object({
-  reason: z.string().min(1, "Motivo é obrigatório"),
-});
-
-// Client update patient schema
-export const updatePatientSchema = z.object({
-  medicalNotes: z.string().optional().nullable(),
-  medications: z.string().optional().nullable(),
-  allergies: z.string().optional().nullable(),
-  address: z.string().min(3, "Endereço é obrigatório").optional(),
-  neighborhood: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-});
-
-export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
 
 // Professional profile update schema
 export const updateProfessionalProfileSchema = z.object({

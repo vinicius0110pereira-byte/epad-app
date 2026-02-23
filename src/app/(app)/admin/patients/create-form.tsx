@@ -5,13 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 
-interface Props {
-  clients: { id: string; name: string }[];
-}
-
-export function AdminCreatePatientForm({ clients }: Props) {
+export function AdminCreatePatientForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -29,12 +24,10 @@ export function AdminCreatePatientForm({ clients }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: form.get("fullName"),
-          address: form.get("address"),
-          neighborhood: form.get("neighborhood") || null,
-          city: form.get("city") || null,
-          medicalNotes: form.get("medicalNotes") || null,
+          bairro: form.get("bairro"),
+          zona: form.get("zona"),
+          grauComplexidade: form.get("grauComplexidade"),
           allergies: form.get("allergies") || null,
-          clientId: form.get("clientId"),
         }),
       });
 
@@ -56,16 +49,29 @@ export function AdminCreatePatientForm({ clients }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <Input id="fullName" name="fullName" label="Nome completo" required />
-      <Input id="address" name="address" label="Endereço" required />
-      <Input id="neighborhood" name="neighborhood" label="Bairro" />
-      <Input id="city" name="city" label="Cidade" />
+      <Input id="bairro" name="bairro" label="Bairro" required />
       <Select
-        id="clientId"
-        name="clientId"
-        label="Responsável (Cliente)"
-        options={clients.map((c) => ({ value: c.id, label: c.name }))}
+        id="zona"
+        name="zona"
+        label="Zona"
+        options={[
+          { value: "NORTE", label: "Norte (ZN)" },
+          { value: "SUL", label: "Sul (ZS)" },
+          { value: "LESTE", label: "Leste (ZL)" },
+          { value: "OESTE", label: "Oeste (ZO)" },
+          { value: "CENTRO", label: "Centro (ZC)" },
+        ]}
       />
-      <Textarea id="medicalNotes" name="medicalNotes" label="Notas médicas" />
+      <Select
+        id="grauComplexidade"
+        name="grauComplexidade"
+        label="Grau de Complexidade"
+        options={[
+          { value: "1", label: "1 — Baixo" },
+          { value: "2", label: "2 — Médio" },
+          { value: "3", label: "3 — Alto" },
+        ]}
+      />
       <Input id="allergies" name="allergies" label="Alergias" />
 
       {error && (

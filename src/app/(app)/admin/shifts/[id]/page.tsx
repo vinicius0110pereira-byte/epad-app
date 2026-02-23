@@ -58,10 +58,9 @@ export default async function AdminShiftDetailPage({
         select: {
           id: true,
           fullName: true,
-          address: true,
-          neighborhood: true,
-          city: true,
-          medicalNotes: true,
+          bairro: true,
+          zona: true,
+          grauComplexidade: true,
           allergies: true,
         },
       },
@@ -162,9 +161,6 @@ export default async function AdminShiftDetailPage({
             endDateTime={shift.endDateTime.toISOString()}
             duplicateData={{
               patientId: shift.patient.id,
-              address: shift.address,
-              neighborhood: shift.neighborhood,
-              city: shift.city,
               requiredProfessionalType: shift.requiredProfessionalType,
               needs: shift.needs,
               value: shift.value,
@@ -176,7 +172,7 @@ export default async function AdminShiftDetailPage({
 
       {/* Status timeline */}
       {!isCancelled && (
-        <Card className="mb-6">
+        <Card className="mb-6 p-5">
           <div className="flex items-center justify-between">
             {STATUS_TIMELINE.map((step, idx) => {
               const done = currentStep >= idx;
@@ -216,7 +212,7 @@ export default async function AdminShiftDetailPage({
       )}
 
       {isCancelled && shift.cancelReason && (
-        <Card className="mb-6 border-red-200 bg-red-50">
+        <Card className="mb-6 p-4 border-red-200 bg-red-50">
           <p className="text-sm font-medium text-red-800">
             Cancelado: {shift.cancelReason}
           </p>
@@ -232,7 +228,7 @@ export default async function AdminShiftDetailPage({
         {/* Main content */}
         <div className="space-y-6 lg:col-span-2">
           {/* Shift info */}
-          <Card>
+          <Card className="p-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex items-start gap-3">
                 <Clock className="mt-0.5 h-5 w-5 text-slate-400" />
@@ -253,9 +249,7 @@ export default async function AdminShiftDetailPage({
                     Local
                   </p>
                   <p className="text-sm text-slate-900">
-                    {shift.address}
-                    {shift.neighborhood ? `, ${shift.neighborhood}` : ""}
-                    {shift.city ? ` — ${shift.city}` : ""}
+                    {shift.patient.bairro} — Zona {shift.patient.zona}
                   </p>
                 </div>
               </div>
@@ -437,15 +431,13 @@ export default async function AdminShiftDetailPage({
                   {shift.patient.fullName}
                 </span>
               </div>
-              <p className="text-xs text-slate-500">{shift.patient.address}</p>
+              <p className="text-xs text-slate-500">
+                {shift.patient.bairro} — Zona {shift.patient.zona}
+                {" · "}Complexidade {shift.patient.grauComplexidade}
+              </p>
               {shift.patient.allergies && (
                 <p className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700">
                   Alergias: {shift.patient.allergies}
-                </p>
-              )}
-              {shift.patient.medicalNotes && (
-                <p className="text-xs text-slate-600">
-                  {shift.patient.medicalNotes}
                 </p>
               )}
             </div>

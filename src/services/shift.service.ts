@@ -3,6 +3,10 @@ import type { SessionUser, ShiftStatus } from "@/types";
 import type { CreateShiftInput } from "@/lib/validators/shift";
 import { canTransition } from "@/lib/utils";
 import { recalcProfessionalCounters } from "@/services/professional.service";
+import {
+  createNotificationsForUrgentShift,
+  createNotificationForProfessional,
+} from "@/services/notification.service";
 
 export async function listShifts(user: SessionUser) {
   const shiftSelect = {
@@ -10,9 +14,6 @@ export async function listShifts(user: SessionUser) {
     startDateTime: true,
     endDateTime: true,
     status: true,
-    address: true,
-    neighborhood: true,
-    city: true,
     isUrgent: true,
     value: true,
     needs: true,
@@ -50,27 +51,9 @@ export async function listShifts(user: SessionUser) {
       },
       select: {
         ...shiftSelect,
-        patient: { select: { fullName: true, address: true, neighborhood: true, city: true } },
+        patient: { select: { fullName: true, bairro: true, zona: true } },
       },
       orderBy: { startDateTime: "asc" },
-      take: 50,
-    });
-  }
-
-  if (user.role === "CLIENT" && user.clientProfileId) {
-    const patients = await prisma.patient.findMany({
-      where: { clientId: user.clientProfileId },
-      select: { id: true },
-    });
-    const patientIds = patients.map((p) => p.id);
-    return prisma.shift.findMany({
-      where: { patientId: { in: patientIds } },
-      select: {
-        ...shiftSelect,
-        patient: { select: { fullName: true } },
-        professional: { include: { user: { select: { name: true } } } },
-      },
-      orderBy: { startDateTime: "desc" },
       take: 50,
     });
   }
@@ -86,13 +69,11 @@ export async function getShift(id: string) {
         select: {
           id: true,
           fullName: true,
-          address: true,
-          neighborhood: true,
-          city: true,
-          medicalNotes: true,
+          bairro: true,
+          zona: true,
+          grauComplexidade: true,
           allergies: true,
           medications: true,
-          clientId: true,
         },
       },
       professional: { include: { user: { select: { name: true, email: true } } } },
@@ -108,14 +89,11 @@ export async function getShift(id: string) {
 }
 
 export async function createShift(data: CreateShiftInput, adminUserId: string) {
-  return prisma.shift.create({
+  const shift = await prisma.shift.create({
     data: {
       startDateTime: new Date(data.startDateTime),
       endDateTime: new Date(data.endDateTime),
       requiredProfessionalType: data.requiredProfessionalType,
-      address: data.address,
-      neighborhood: data.neighborhood ?? null,
-      city: data.city ?? null,
       needs: data.needs ?? null,
       value: data.value ?? null,
       isUrgent: data.isUrgent ?? false,
@@ -124,6 +102,23 @@ export async function createShift(data: CreateShiftInput, adminUserId: string) {
       status: "OPEN",
     },
   });
+
+  if (data.isUrgent) {
+    const patient = await prisma.patient.findUnique({
+      where: { id: data.patientId },
+      select: { fullName: true },
+    });
+    if (patient) {
+      await createNotificationsForUrgentShift(
+        shift.id,
+        patient.fullName,
+        shift.startDateTime,
+        shift.requiredProfessionalType,
+      );
+    }
+  }
+
+  return shift;
 }
 
 /**
@@ -135,17 +130,8 @@ export async function assignShift(
   professionalProfileId: string,
   actorUserId: string,
 ) {
-  return prisma.$transaction(async (tx) => {
-    const shift = await tx.shift.findUnique({ where: { id: shiftId } });
-
-    if (!shift) throw new Error("Plantão não encontrado");
-
-    const status = shift.status as ShiftStatus;
-    if (!canTransition(status, "ACCEPTED")) {
-      throw new Error(`Plantão com status "${status}" não pode ser aceito`);
-    }
-
-    // Check professional type matches shift requirement
+  const updated = await prisma.$transaction(async (tx) => {
+    // Valida profissional antes da operação atômica
     const professional = await tx.professionalProfile.findUnique({
       where: { id: professionalProfileId },
       select: { professionalType: true, status: true },
@@ -154,13 +140,18 @@ export async function assignShift(
     if (professional.status !== "ACTIVE") {
       throw new Error("Profissional suspenso ou inativo não pode aceitar plantões");
     }
+
+    // Busca shift para validações de tipo e conflito
+    const shift = await tx.shift.findUnique({ where: { id: shiftId } });
+    if (!shift) throw new Error("Plantão não encontrado");
+
     if (shift.requiredProfessionalType !== professional.professionalType) {
       throw new Error(
         `Este plantão requer um profissional do tipo ${shift.requiredProfessionalType}`,
       );
     }
 
-    // Check for schedule conflicts
+    // Verifica conflito de horário
     const conflict = await tx.shift.findFirst({
       where: {
         professionalId: professionalProfileId,
@@ -180,14 +171,23 @@ export async function assignShift(
 
     const beforeJson = JSON.stringify({ status: shift.status, professionalId: shift.professionalId });
 
-    const updated = await tx.shift.update({
-      where: { id: shiftId },
+    // Atualização atômica: só atualiza se o status ainda for OPEN ou URGENT_OPEN.
+    // Garante que dois profissionais nunca aceitem o mesmo plantão simultaneamente.
+    const result = await tx.shift.updateMany({
+      where: {
+        id: shiftId,
+        status: { in: ["OPEN", "URGENT_OPEN"] },
+      },
       data: {
         status: "ACCEPTED",
         professionalId: professionalProfileId,
         acceptedAt: new Date(),
       },
     });
+
+    if (result.count === 0) {
+      throw new Error("Este plantão não está mais disponível. Outro profissional pode ter aceitado primeiro.");
+    }
 
     await tx.shiftEvent.create({
       data: {
@@ -202,8 +202,18 @@ export async function assignShift(
       },
     });
 
-    return updated;
+    return await tx.shift.findUnique({ where: { id: shiftId } });
   });
+
+  await createNotificationForProfessional(
+    professionalProfileId,
+    "SHIFT_ASSIGNED",
+    "Plantão confirmado",
+    "Você foi atribuído a um plantão",
+    `/professional/shifts/${shiftId}`,
+  );
+
+  return updated;
 }
 
 /**
@@ -215,7 +225,7 @@ export async function adminAssignShift(
   professionalProfileId: string,
   adminUserId: string,
 ) {
-  return prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     const shift = await tx.shift.findUnique({ where: { id: shiftId } });
     if (!shift) throw new Error("Plantão não encontrado");
 
@@ -258,14 +268,22 @@ export async function adminAssignShift(
 
     const beforeJson = JSON.stringify({ status: shift.status, professionalId: shift.professionalId });
 
-    const updated = await tx.shift.update({
-      where: { id: shiftId },
+    // Atualização atômica — garante que o plantão ainda está aberto no momento do commit
+    const result = await tx.shift.updateMany({
+      where: {
+        id: shiftId,
+        status: { in: ["OPEN", "URGENT_OPEN"] },
+      },
       data: {
         status: "ACCEPTED",
         professionalId: professionalProfileId,
         acceptedAt: new Date(),
       },
     });
+
+    if (result.count === 0) {
+      throw new Error("Este plantão não está mais disponível para atribuição.");
+    }
 
     await tx.shiftEvent.create({
       data: {
@@ -280,8 +298,18 @@ export async function adminAssignShift(
       },
     });
 
-    return updated;
+    return await tx.shift.findUnique({ where: { id: shiftId } });
   });
+
+  await createNotificationForProfessional(
+    professionalProfileId,
+    "SHIFT_ASSIGNED",
+    "Plantão confirmado",
+    "Você foi atribuído a um plantão pelo administrador",
+    `/professional/shifts/${shiftId}`,
+  );
+
+  return updated;
 }
 
 /**
@@ -301,6 +329,12 @@ export async function transitionShift(
     if (!canTransition(fromStatus, toStatus)) {
       throw new Error(
         `Transição de "${fromStatus}" para "${toStatus}" não é permitida`,
+      );
+    }
+
+    if (toStatus === "CONFIRMED" && !shift.contatoConfirmado) {
+      throw new Error(
+        "É obrigatório confirmar o contato com a cuidadora antes de confirmar o plantão",
       );
     }
 
@@ -366,6 +400,16 @@ export async function transitionShift(
 
   if (toStatus === "COMPLETED" && result.professionalId) {
     await recalcProfessionalCounters(result.professionalId);
+  }
+
+  if (toStatus === "CANCELLED" && result.professionalId) {
+    await createNotificationForProfessional(
+      result.professionalId,
+      "SHIFT_CANCELLED",
+      "Plantão cancelado",
+      "Um plantão seu foi cancelado",
+      `/professional/shifts/${shiftId}`,
+    );
   }
 
   return result;

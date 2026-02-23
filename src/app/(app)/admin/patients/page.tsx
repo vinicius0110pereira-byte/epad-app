@@ -8,6 +8,7 @@ import Link from "next/link";
 import { AdminCreatePatientForm } from "./create-form";
 import { Heart, ChevronRight, Search } from "lucide-react";
 import type { Prisma } from "@prisma/client";
+import { ZONA_LABELS } from "@/lib/utils";
 
 interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -23,11 +24,10 @@ export default async function AdminPatientsPage({ searchParams }: Props) {
     ...(q ? { fullName: { contains: q } } : {}),
   };
 
-  const [patients, total, clientProfiles] = await Promise.all([
+  const [patients, total] = await Promise.all([
     prisma.patient.findMany({
       where,
       include: {
-        client: { include: { user: { select: { name: true } } } },
         _count: { select: { shifts: true } },
       },
       orderBy: { fullName: "asc" },
@@ -35,9 +35,6 @@ export default async function AdminPatientsPage({ searchParams }: Props) {
       take: pageSize,
     }),
     prisma.patient.count({ where }),
-    prisma.clientProfile.findMany({
-      include: { user: { select: { name: true, email: true } } },
-    }),
   ]);
 
   const { totalPages } = getPaginationMeta(total, page, pageSize);
@@ -96,8 +93,7 @@ export default async function AdminPatientsPage({ searchParams }: Props) {
                 <thead className="border-b border-slate-100 bg-slate-50/80">
                   <tr>
                     <th className="px-4 py-3 text-left font-semibold text-slate-600">Nome</th>
-                    <th className="hidden px-4 py-3 text-left font-semibold text-slate-600 sm:table-cell">Endereço</th>
-                    <th className="hidden px-4 py-3 text-left font-semibold text-slate-600 md:table-cell">Responsável</th>
+                    <th className="hidden px-4 py-3 text-left font-semibold text-slate-600 sm:table-cell">Bairro / Zona</th>
                     <th className="px-4 py-3 text-center font-semibold text-slate-600">Plantões</th>
                     <th className="w-10" />
                   </tr>
@@ -114,11 +110,8 @@ export default async function AdminPatientsPage({ searchParams }: Props) {
                         </Link>
                       </td>
                       <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">
-                        {p.address}
-                        {p.neighborhood ? `, ${p.neighborhood}` : ""}
-                      </td>
-                      <td className="hidden px-4 py-3 text-slate-600 md:table-cell">
-                        {p.client?.user?.name ?? "—"}
+                        {p.bairro}
+                        {p.zona ? ` — ${ZONA_LABELS[p.zona] ?? p.zona}` : ""}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-slate-100 px-2 text-xs font-medium text-slate-700">
@@ -145,12 +138,7 @@ export default async function AdminPatientsPage({ searchParams }: Props) {
 
         <div>
           <SectionCard title="Novo Paciente">
-            <AdminCreatePatientForm
-              clients={clientProfiles.map((c) => ({
-                id: c.id,
-                name: c.user.name ?? c.user.email,
-              }))}
-            />
+            <AdminCreatePatientForm />
           </SectionCard>
         </div>
       </div>

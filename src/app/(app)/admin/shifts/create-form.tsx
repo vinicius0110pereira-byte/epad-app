@@ -10,9 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 interface PatientOption {
   id: string;
   name: string;
-  address: string;
-  neighborhood: string;
-  city: string;
+  bairro: string;
+  zona: string;
 }
 
 interface Props {
@@ -23,19 +22,6 @@ export function AdminCreateShiftForm({ patients }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [address, setAddress] = useState("");
-  const [neighborhood, setNeighborhood] = useState("");
-  const [city, setCity] = useState("");
-
-  function handlePatientChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const patientId = e.target.value;
-    const patient = patients.find((p) => p.id === patientId);
-    if (patient) {
-      setAddress(patient.address);
-      setNeighborhood(patient.neighborhood);
-      setCity(patient.city);
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -54,9 +40,6 @@ export function AdminCreateShiftForm({ patients }: Props) {
           startDateTime: form.get("startDateTime"),
           endDateTime: form.get("endDateTime"),
           requiredProfessionalType: form.get("requiredProfessionalType"),
-          address: form.get("address"),
-          neighborhood: form.get("neighborhood") || null,
-          city: form.get("city") || null,
           needs: form.get("needs") || null,
           value: value ? Math.round(parseFloat(value as string) * 100) : null,
           isUrgent: form.get("isUrgent") === "on",
@@ -70,9 +53,6 @@ export function AdminCreateShiftForm({ patients }: Props) {
       }
 
       e.currentTarget.reset();
-      setAddress("");
-      setNeighborhood("");
-      setCity("");
       router.refresh();
     } catch {
       setError("Erro de conexão");
@@ -91,7 +71,6 @@ export function AdminCreateShiftForm({ patients }: Props) {
           id="patientId"
           name="patientId"
           required
-          onChange={handlePatientChange}
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Selecione...</option>
@@ -126,28 +105,6 @@ export function AdminCreateShiftForm({ patients }: Props) {
           { value: "TECHNICIAN", label: "Técnico(a)" },
           { value: "OTHER", label: "Outro" },
         ]}
-      />
-      <Input
-        id="address"
-        name="address"
-        label="Endereço"
-        required
-        value={address}
-        onChange={(e) => setAddress(e.target.value)}
-      />
-      <Input
-        id="neighborhood"
-        name="neighborhood"
-        label="Bairro"
-        value={neighborhood}
-        onChange={(e) => setNeighborhood(e.target.value)}
-      />
-      <Input
-        id="city"
-        name="city"
-        label="Cidade"
-        value={city}
-        onChange={(e) => setCity(e.target.value)}
       />
       <Textarea id="needs" name="needs" label="Necessidades" />
       <Input

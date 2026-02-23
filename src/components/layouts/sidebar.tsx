@@ -40,10 +40,6 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: "Meus Ganhos", href: "/professional/earnings", icon: Wallet },
     { label: "Meu Perfil", href: "/professional/profile", icon: User },
   ],
-  CLIENT: [
-    { label: "Dashboard", href: "/client/dashboard", icon: LayoutDashboard },
-    { label: "Meus Pacientes", href: "/client/patients", icon: Heart },
-  ],
 };
 
 interface SidebarProps {
@@ -58,18 +54,18 @@ export function Sidebar({ userRole, badges }: SidebarProps) {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col bg-sidebar lg:flex">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 px-6">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
-          <span className="text-base font-bold text-white">E</span>
+      <div className="flex h-16 items-center gap-3 px-5 border-b border-white/8">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
+          <span className="text-sm font-bold text-white">E</span>
         </div>
         <div>
-          <span className="text-lg font-bold tracking-tight text-white">EPAD</span>
-          <p className="text-[10px] leading-tight text-blue-200/60">Gestão de Plantões</p>
+          <span className="text-base font-bold tracking-tight text-white">EPAD</span>
+          <p className="text-[10px] leading-tight text-blue-200/50">Gestão de Plantões</p>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-0.5 px-3 py-4">
         {items.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
@@ -79,14 +75,18 @@ export function Sidebar({ userRole, badges }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+              className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
                 isActive
-                  ? "bg-white/15 text-white shadow-sm"
-                  : "text-blue-100/70 hover:bg-sidebar-hover hover:text-white"
+                  ? "bg-white/15 text-white"
+                  : "text-blue-100/60 hover:bg-white/8 hover:text-white"
               }`}
             >
-              <Icon className="h-5 w-5 shrink-0" />
-              <span className="flex-1">{item.label}</span>
+              {/* Active indicator */}
+              {isActive && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r-full bg-white/80" />
+              )}
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="flex-1 truncate">{item.label}</span>
               {badgeCount != null && badgeCount > 0 && (
                 <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
                   {badgeCount > 99 ? "99+" : badgeCount}
@@ -98,8 +98,8 @@ export function Sidebar({ userRole, badges }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-white/10 px-4 py-4">
-        <p className="text-xs text-blue-200/40">EPAD v0.1.0</p>
+      <div className="border-t border-white/8 px-5 py-3">
+        <p className="text-[10px] text-blue-200/30">EPAD v0.1.0</p>
       </div>
     </aside>
   );
@@ -113,8 +113,8 @@ export function MobileNav({ userRole, badges }: SidebarProps) {
   const items = NAV_ITEMS[userRole] ?? [];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white lg:hidden">
-      <div className="flex items-center justify-around py-2">
+    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur-sm lg:hidden">
+      <div className="flex items-center justify-around px-2 py-2">
         {items.slice(0, 5).map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
@@ -124,13 +124,16 @@ export function MobileNav({ userRole, badges }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`relative flex flex-col items-center gap-0.5 px-2 py-1 text-xs transition-colors ${
+              className={`relative flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 text-xs transition-all ${
                 isActive
-                  ? "text-blue-800 font-medium"
-                  : "text-slate-400"
+                  ? "text-blue-700 font-semibold"
+                  : "text-slate-400 hover:text-slate-600"
               }`}
             >
-              <div className="relative">
+              {isActive && (
+                <span className="absolute inset-0 rounded-xl bg-blue-50" />
+              )}
+              <div className="relative z-10">
                 <Icon className="h-5 w-5" />
                 {badgeCount != null && badgeCount > 0 && (
                   <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
@@ -138,7 +141,7 @@ export function MobileNav({ userRole, badges }: SidebarProps) {
                   </span>
                 )}
               </div>
-              <span className="truncate">{item.label}</span>
+              <span className="relative z-10 truncate">{item.label}</span>
             </Link>
           );
         })}

@@ -8,9 +8,6 @@ import type { ShiftStatus } from "@/types";
 
 interface DuplicateData {
   patientId: string;
-  address: string;
-  neighborhood: string | null;
-  city: string | null;
   requiredProfessionalType: string;
   needs: string | null;
   value: number | null;
@@ -26,7 +23,7 @@ interface Props {
   duplicateData?: DuplicateData;
 }
 
-type DialogType = "cancel" | "unassign" | "reschedule" | "adjust-value" | "add-note" | "duplicate" | null;
+type DialogType = "cancel" | "unassign" | "reschedule" | "adjust-value" | "add-note" | "occurrence" | "duplicate" | null;
 
 export function AdminShiftActions({ shiftId, status, hasProfessional, startDateTime, endDateTime, duplicateData }: Props) {
   const router = useRouter();
@@ -161,6 +158,14 @@ export function AdminShiftActions({ shiftId, status, hasProfessional, startDateT
     handleAdminAction("note", { note: noteText.trim() }, "Nota adicionada");
   }
 
+  function handleConfirmOccurrence() {
+    if (!noteText.trim()) {
+      toast.error("Informe a ocorrência");
+      return;
+    }
+    handleAdminAction("occurrence", { description: noteText.trim() }, "Ocorrência registrada");
+  }
+
   async function handleConfirmDuplicate() {
     if (!dupStart || !dupEnd) {
       toast.error("Informe as datas do novo plantão");
@@ -177,9 +182,6 @@ export function AdminShiftActions({ shiftId, status, hasProfessional, startDateT
           startDateTime: new Date(dupStart).toISOString(),
           endDateTime: new Date(dupEnd).toISOString(),
           requiredProfessionalType: duplicateData.requiredProfessionalType,
-          address: duplicateData.address,
-          neighborhood: duplicateData.neighborhood,
-          city: duplicateData.city,
           needs: duplicateData.needs,
           value: duplicateData.value,
           isUrgent: duplicateData.isUrgent,
@@ -283,6 +285,9 @@ export function AdminShiftActions({ shiftId, status, hasProfessional, startDateT
         </Button>
         <Button size="sm" variant="ghost" onClick={() => setDialog("add-note")}>
           Nota
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => { setNoteText(""); setDialog("occurrence"); }}>
+          Ocorrência
         </Button>
         {duplicateData && (
           <Button size="sm" variant="secondary" onClick={() => setDialog("duplicate")}>
@@ -438,6 +443,29 @@ export function AdminShiftActions({ shiftId, status, hasProfessional, startDateT
                   <Button size="sm" variant="secondary" onClick={closeDialog}>Voltar</Button>
                   <Button size="sm" onClick={handleConfirmAddNote} loading={loading}>
                     Salvar Nota
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {dialog === "occurrence" && (
+              <>
+                <h3 className="text-lg font-semibold text-slate-900">Registrar Ocorrência</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Ficará visível na timeline do plantão para todos (incluindo a família).
+                </p>
+                <textarea
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Ex: Paciente bem disposto, se alimentou normalmente às 12h..."
+                  rows={4}
+                  className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+                <div className="mt-4 flex justify-end gap-2">
+                  <Button size="sm" variant="secondary" onClick={closeDialog}>Voltar</Button>
+                  <Button size="sm" onClick={handleConfirmOccurrence} loading={loading}>
+                    Registrar
                   </Button>
                 </div>
               </>

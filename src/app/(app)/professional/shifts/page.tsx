@@ -14,8 +14,6 @@ import {
   ClipboardList,
   Clock,
   MapPin,
-  User,
-  Phone,
   ChevronRight,
   Search,
 } from "lucide-react";
@@ -76,10 +74,8 @@ export default async function ProfessionalShiftsPage({
         patient: {
           select: {
             fullName: true,
-            address: true,
-            neighborhood: true,
-            city: true,
-            client: { select: { phone: true, user: { select: { name: true } } } },
+            bairro: true,
+            zona: true,
           },
         },
       },
@@ -116,14 +112,14 @@ export default async function ProfessionalShiftsPage({
             name="q"
             defaultValue={q}
             placeholder="Buscar por paciente..."
-            className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
           />
           {tab && <input type="hidden" name="tab" value={tab} />}
         </div>
       </form>
 
       {/* Tabs */}
-      <div className="mb-5 flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
+      <div className="mb-5 flex gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
         {STATUS_TABS.map((t) => {
           const active = tab === t.value;
           const href = t.value
@@ -133,10 +129,10 @@ export default async function ProfessionalShiftsPage({
             <Link
               key={t.value}
               href={href}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${
+              className={`flex-1 rounded-xl px-4 py-2 text-center text-sm font-medium transition-all ${
                 active
-                  ? "bg-blue-800 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
+                  ? "bg-gradient-to-b from-blue-700 to-blue-900 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
             >
               {t.label}
@@ -173,24 +169,8 @@ export default async function ProfessionalShiftsPage({
                     </span>
                     <span className="flex items-center gap-1">
                       <MapPin className="h-3.5 w-3.5" />
-                      {s.patient.address}
-                      {s.patient.neighborhood
-                        ? `, ${s.patient.neighborhood}`
-                        : ""}
+                      {s.patient.bairro} — Zona {s.patient.zona}
                     </span>
-                  </div>
-
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
-                    <span className="flex items-center gap-1 text-xs text-slate-600">
-                      <User className="h-3.5 w-3.5 text-slate-400" />
-                      Familiar: {s.patient.client.user.name}
-                    </span>
-                    {s.patient.client.phone && (
-                      <span className="flex items-center gap-1 text-xs text-slate-600">
-                        <Phone className="h-3.5 w-3.5 text-slate-400" />
-                        {s.patient.client.phone}
-                      </span>
-                    )}
                   </div>
                 </div>
 

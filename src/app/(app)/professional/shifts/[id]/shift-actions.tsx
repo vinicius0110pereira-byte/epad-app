@@ -22,6 +22,8 @@ export function ProfessionalShiftActions({ shiftId, status }: Props) {
   const [loading, setLoading] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   async function handleTransition(
     toStatus: ShiftStatus,
@@ -66,6 +68,34 @@ export function ProfessionalShiftActions({ shiftId, status }: Props) {
     });
   }
 
+  async function handleAlertAdmin() {
+    if (!alertMessage.trim()) {
+      toast.error("Escreva uma mensagem antes de enviar");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/shifts/${shiftId}/alert-admin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: alertMessage.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Erro ao enviar aviso");
+        return;
+      }
+      toast.success("Aviso enviado ao admin com sucesso");
+      setShowAlertModal(false);
+      setAlertMessage("");
+      router.refresh();
+    } catch {
+      toast.error("Erro de conexão");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const canCancel = ACTIVE_STATUSES.includes(status);
 
   return (
@@ -101,6 +131,15 @@ export function ProfessionalShiftActions({ shiftId, status }: Props) {
             Finalizar Plantão
           </Button>
         )}
+        {status === "IN_PROGRESS" && (
+          <Button
+            variant="secondary"
+            onClick={() => setShowAlertModal(true)}
+            loading={loading}
+          >
+            Avisar Admin
+          </Button>
+        )}
         {canCancel && (
           <Button
             variant="danger"
@@ -111,6 +150,46 @@ export function ProfessionalShiftActions({ shiftId, status }: Props) {
           </Button>
         )}
       </div>
+
+      {showAlertModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-slate-900">
+              Avisar Admin
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Descreva o que está acontecendo. A mensagem ficará registrada na timeline do plantão.
+            </p>
+            <textarea
+              value={alertMessage}
+              onChange={(e) => setAlertMessage(e.target.value)}
+              placeholder="Ex: Paciente recusou a medicação das 14h..."
+              rows={4}
+              className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setShowAlertModal(false);
+                  setAlertMessage("");
+                }}
+              >
+                Voltar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleAlertAdmin}
+                loading={loading}
+              >
+                Enviar Aviso
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">

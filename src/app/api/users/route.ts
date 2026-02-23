@@ -17,7 +17,6 @@ export async function GET() {
         createdAt: true,
         updatedAt: true,
         professionalProfile: { select: { id: true, professionalType: true, approved: true, avatarUrl: true } },
-        clientProfile: { select: { id: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -73,15 +72,6 @@ export async function POST(req: NextRequest) {
         },
       });
       professionalProfileId = profile.id;
-    }
-
-    if (role === "CLIENT") {
-      await prisma.clientProfile.create({
-        data: {
-          userId: user.id,
-          phone: phone ?? null,
-        },
-      });
     }
 
     return Response.json(

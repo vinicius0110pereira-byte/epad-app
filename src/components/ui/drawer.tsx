@@ -51,16 +51,14 @@ export function Drawer({
       {/* Panel */}
       <div
         className={`relative flex ${width} w-full flex-col bg-white shadow-2xl`}
-        style={{ animation: "slideIn 0.2s ease-out" }}
+        style={{ animation: "slideInRight 0.22s cubic-bezier(0.16, 1, 0.3, 1)" }}
       >
         {/* Header */}
         {(title || subtitle) && (
-          <div className="flex items-start justify-between border-b border-slate-200 px-6 py-4">
+          <div className="flex items-start justify-between border-b border-slate-100 px-6 py-4">
             <div>
               {title && (
-                <h2 className="text-lg font-semibold text-slate-900">
-                  {title}
-                </h2>
+                <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
               )}
               {subtitle && (
                 <p className="mt-0.5 text-sm text-slate-500">{subtitle}</p>
@@ -68,27 +66,16 @@ export function Drawer({
             </div>
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
+        <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
       </div>
-
-      <style jsx>{`
-        @keyframes slideIn {
-          from {
-            transform: translateX(100%);
-          }
-          to {
-            transform: translateX(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }

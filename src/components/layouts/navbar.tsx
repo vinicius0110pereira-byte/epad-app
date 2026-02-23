@@ -19,15 +19,11 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
   PROFESSIONAL: [
     { label: "Dashboard", href: "/professional/dashboard" },
   ],
-  CLIENT: [
-    { label: "Dashboard", href: "/client/dashboard" },
-  ],
 };
 
 const ROLE_LABELS: Record<UserRole, string> = {
   ADMIN: "Administrador",
   PROFESSIONAL: "Profissional",
-  CLIENT: "Familiar",
 };
 
 interface NavbarProps {

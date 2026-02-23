@@ -59,6 +59,7 @@ export async function POST(
     if (error instanceof Error) {
       if (
         error.message.includes("não pode ser aceito") ||
+        error.message.includes("não está mais disponível") ||
         error.message.includes("Conflito de horário") ||
         error.message.includes("Apenas plantões abertos")
       ) {

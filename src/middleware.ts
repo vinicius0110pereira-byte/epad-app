@@ -15,7 +15,6 @@ function isPublicPath(pathname: string): boolean {
 const ROLE_ROUTES: Record<string, string[]> = {
   ADMIN: ["/admin", "/dashboard"],
   PROFESSIONAL: ["/professional", "/dashboard"],
-  CLIENT: ["/client", "/dashboard"],
 };
 
 export default auth((req) => {
@@ -35,10 +34,10 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
-  const user = req.auth?.user as Record<string, unknown> | undefined;
+  const sessionUser = req.auth?.user;
 
   // No session
-  if (!user) {
+  if (!sessionUser) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
@@ -47,7 +46,7 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  const role = user.role as string;
+  const role = (sessionUser as Record<string, unknown>).role as string;
   const allowedRoutes = ROLE_ROUTES[role];
 
   if (!allowedRoutes) {
@@ -58,7 +57,7 @@ export default auth((req) => {
   }
 
   // Verify role for protected routes
-  const protectedPrefixes = ["/admin", "/professional", "/client"];
+  const protectedPrefixes = ["/admin", "/professional"];
   const matchedPrefix = protectedPrefixes.find((p) =>
     pathname.startsWith(p),
   );

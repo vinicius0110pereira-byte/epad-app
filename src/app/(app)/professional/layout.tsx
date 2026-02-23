@@ -41,7 +41,11 @@ export default async function ProfessionalLayout({
 }) {
   const session = await auth();
 
-  if (!session?.user || session.user.role !== "PROFESSIONAL") {
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  if (session.user.role !== "PROFESSIONAL") {
     redirect("/dashboard");
   }
 
@@ -63,7 +67,7 @@ export default async function ProfessionalLayout({
       <Sidebar userRole="PROFESSIONAL" badges={badges} />
       <MobileNav userRole="PROFESSIONAL" badges={badges} />
       <div className="lg:pl-60">
-        <Topbar userName={session.user.name} userRole="PROFESSIONAL" />
+        <Topbar userName={session.user.name} userRole="PROFESSIONAL" userId={session.user.id} />
         <main className="p-4 pb-20 lg:p-6 lg:pb-6">{children}</main>
       </div>
     </>

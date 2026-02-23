@@ -55,6 +55,9 @@ export async function POST(
     if (error instanceof Error && error.message.includes("não é permitida")) {
       return Response.json({ error: error.message }, { status: 409 });
     }
+    if (error instanceof Error && error.message.includes("confirmar o contato")) {
+      return Response.json({ error: error.message }, { status: 422 });
+    }
     return handleAuthError(error);
   }
 }

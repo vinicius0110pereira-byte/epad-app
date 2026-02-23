@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
 import { PageHeader } from "@/components/ui/page-header";
 import { Avatar } from "@/components/ui/avatar";
-import { Users, Shield, Stethoscope, UserCircle, CheckCircle, XCircle, Search } from "lucide-react";
+import { Users, Shield, Stethoscope, CheckCircle, XCircle, Search } from "lucide-react";
 import { CreateUserForm } from "./create-form";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
@@ -13,14 +13,12 @@ import type { Prisma } from "@prisma/client";
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: typeof Shield }> = {
   ADMIN: { label: "Admin", color: "bg-purple-100 text-purple-700", icon: Shield },
   PROFESSIONAL: { label: "Profissional", color: "bg-blue-100 text-blue-700", icon: Stethoscope },
-  CLIENT: { label: "Familiar", color: "bg-amber-100 text-amber-700", icon: UserCircle },
 };
 
 const ROLE_OPTIONS = [
   { value: "", label: "Todos" },
   { value: "ADMIN", label: "Admin" },
   { value: "PROFESSIONAL", label: "Profissional" },
-  { value: "CLIENT", label: "Familiar" },
 ];
 
 interface Props {
@@ -52,7 +50,6 @@ export default async function AdminUsersPage({ searchParams }: Props) {
       where,
       include: {
         professionalProfile: { select: { id: true, professionalType: true, approved: true, avatarUrl: true } },
-        clientProfile: { select: { id: true } },
       },
       orderBy: { createdAt: "desc" },
       skip,
@@ -161,9 +158,6 @@ export default async function AdminUsersPage({ searchParams }: Props) {
                               {user.professionalProfile.professionalType}
                               {user.professionalProfile.approved ? " (aprovado)" : " (pendente)"}
                             </span>
-                          )}
-                          {user.role === "CLIENT" && user.clientProfile && (
-                            <span>Perfil ativo</span>
                           )}
                           {user.role === "ADMIN" && <span>Acesso total</span>}
                         </td>

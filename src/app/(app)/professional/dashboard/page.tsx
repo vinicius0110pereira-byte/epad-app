@@ -10,12 +10,12 @@ import { ShiftActions } from "./shift-actions";
 import { AvailabilityForm } from "./availability-form";
 import Link from "next/link";
 import {
-  User,
   AlertTriangle,
   ChevronRight,
   ClipboardList,
   Clock,
 } from "lucide-react";
+import { AutoRefresh } from "@/components/ui/auto-refresh";
 
 export default async function ProfessionalDashboard() {
   const session = await auth();
@@ -32,10 +32,8 @@ export default async function ProfessionalDashboard() {
 
   const patientSelect = {
     fullName: true,
-    address: true,
-    neighborhood: true,
-    city: true,
-    client: { select: { user: { select: { name: true } } } },
+    bairro: true,
+    zona: true,
   } as const;
 
   const shiftSelect = {
@@ -82,6 +80,9 @@ export default async function ProfessionalDashboard() {
 
   return (
     <div>
+      {/* Atualiza os plantões disponíveis automaticamente a cada 20s */}
+      <AutoRefresh intervalMs={20_000} />
+
       <div className="mb-6 flex items-center gap-5">
         <Avatar
           src={profile?.avatarUrl}
@@ -125,21 +126,24 @@ export default async function ProfessionalDashboard() {
               {available.map((s) => (
                 <div
                   key={s.id}
-                  className={`rounded-xl border bg-white p-4 transition-all hover:shadow-md ${
+                  className={`relative overflow-hidden rounded-xl border bg-white p-4 transition-all hover:shadow-md ${
                     s.isUrgent
-                      ? "border-l-4 border-l-red-500 border-t-slate-200 border-r-slate-200 border-b-slate-200"
-                      : "border-slate-200 hover:border-blue-200"
+                      ? "border-red-200 hover:border-red-300 hover:shadow-red-100/60"
+                      : "border-slate-200 hover:border-blue-200 hover:shadow-blue-100/40"
                   }`}
                 >
-                  <div className="flex items-start justify-between">
+                  {s.isUrgent && (
+                    <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-red-400 to-red-600" />
+                  )}
+                  <div className={`flex items-start justify-between ${s.isUrgent ? "pl-2" : ""}`}>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-slate-900 truncate">
                           {s.patient.fullName}
                         </p>
                         {s.isUrgent && (
-                          <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                            <AlertTriangle className="h-3 w-3" />
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                            <AlertTriangle className="h-2.5 w-2.5" />
                             Urgente
                           </span>
                         )}
@@ -150,18 +154,8 @@ export default async function ProfessionalDashboard() {
                         {formatDateTime(s.endDateTime)}
                       </p>
                       <p className="mt-1 text-sm text-slate-500">
-                        {s.patient.address}
-                        {s.patient.neighborhood
-                          ? `, ${s.patient.neighborhood}`
-                          : ""}
-                        {s.patient.city ? ` - ${s.patient.city}` : ""}
+                        {s.patient.bairro} — Zona {s.patient.zona}
                       </p>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
-                        <span className="flex items-center gap-1 text-xs text-slate-600">
-                          <User className="h-3.5 w-3.5 text-slate-400" />
-                          Familiar: {s.patient.client.user.name}
-                        </span>
-                      </div>
                       {s.needs && (
                         <p className="mt-2 text-sm text-slate-600 line-clamp-2">
                           {s.needs}
@@ -219,14 +213,8 @@ export default async function ProfessionalDashboard() {
                         {formatDateTime(s.endDateTime)}
                       </p>
                       <p className="mt-1 text-sm text-slate-500">
-                        {s.patient.address}
+                        {s.patient.bairro} — Zona {s.patient.zona}
                       </p>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
-                        <span className="flex items-center gap-1 text-xs text-slate-600">
-                          <User className="h-3.5 w-3.5 text-slate-400" />
-                          Familiar: {s.patient.client.user.name}
-                        </span>
-                      </div>
                     </div>
                     <StatusBadge status={s.status as ShiftStatus} />
                   </div>

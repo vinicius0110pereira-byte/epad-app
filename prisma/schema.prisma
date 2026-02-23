@@ -18,12 +18,12 @@ datasource db {
 // VALIDACAO OBRIGATORIA NO BACKEND usando constantes/guards.
 // Ao migrar para PostgreSQL, converter para enum nativo se desejado.
 //
-// UserRole: "ADMIN" | "PROFESSIONAL" | "CLIENT"
+// UserRole: "ADMIN" | "PROFESSIONAL"
 // ProfessionalType: "CAREGIVER" | "NURSE" | "TECHNICIAN" | "OTHER"
 // ShiftStatus: "OPEN" | "OFFERED" | "ASSIGNED" | "ACCEPTED" | "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "VERIFIED" | "CANCELLED" | "NO_SHOW" | "URGENT_OPEN"
 // EventType: "CREATED" | "ACCEPTED" | "CONFIRMED" | "STARTED" | "FINISHED" | "CANCELLED" | "LATE" | "OCCURRENCE" | "MED_REQUEST" | "RESOLVED" | "OFFERED" | "ASSIGNED" | "UNASSIGNED" | "VERIFIED" | "NO_SHOW" | "RESCHEDULED" | "VALUE_ADJUSTED" | "NOTE_ADDED"
 // ProfessionalStatus: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "PENDING"
-// FeedbackRole: "PROFESSIONAL" | "CLIENT" | "ADMIN"
+// FeedbackRole: "PROFESSIONAL" | "ADMIN"
 
 // ==============================================
 // USER - Entidade principal de autenticacao
@@ -34,14 +34,13 @@ model User {
   email        String   @unique
   passwordHash String
   name         String?  // Opcional para permitir criacao de usuarios sem nome inicial (ex: seed)
-  role         String   @default("CLIENT") // UserRole - validar no backend
+  role         String   @default("PROFESSIONAL") // UserRole - validar no backend
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   // Relacionamentos de perfil (1:1)
   professionalProfile ProfessionalProfile?
-  clientProfile       ClientProfile?
 
   // Plantoes criados (Admin)
   createdShifts Shift[] @relation("CreatedByAdmin")
@@ -51,6 +50,9 @@ model User {
 
   // Feedbacks dados
   feedbacks Feedback[]
+
+  // Notificacoes in-app
+  notifications Notification[]
 
   @@index([email])
   @@index([role])
@@ -94,27 +96,6 @@ model ProfessionalProfile {
 }
 
 // ==============================================
-// CLIENT PROFILE - Dados especificos do familiar/responsavel
-// ==============================================
-
-model ClientProfile {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  phone     String?
-  // LGPD: Dado sensivel - NAO retornar em APIs publicas. Acesso restrito por role.
-  document  String?  // CPF
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relacionamentos
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  patients       Patient[]
-  shiftRequests  ShiftRequest[]
-
-  @@index([userId])
-}
-
-// ==============================================
 // PATIENT - Paciente atendido
 // ==============================================
 
@@ -122,15 +103,9 @@ model Patient {
   id           String    @id @default(uuid())
   fullName     String
   birthDate    DateTime?
-  address      String
-  neighborhood String?
-  city         String?
-  state        String?
-  zipCode      String?
-
-  // LGPD: Dado sensivel - NAO retornar em APIs publicas. Acesso restrito por role.
-  // Conter apenas informacoes relevantes ao cuidado diario, sem diagnosticos ou CIDs.
-  medicalNotes String?
+  bairro       String
+  zona         String    // "NORTE" | "SUL" | "LESTE" | "OESTE" | "CENTRO"
+  grauComplexidade String @default("1") // "1" | "2" | "3"
 
   // Formato esperado: JSON string. Ex: "[{\"name\":\"Dipirona\",\"dose\":\"500mg\",\"frequency\":\"8h\"}]"
   // Validacao e parsing no backend.
@@ -143,12 +118,8 @@ model Patient {
   updatedAt DateTime @updatedAt
 
   // Relacionamentos
-  clientId      String
-  client        ClientProfile  @relation(fields: [clientId], references: [id], onDelete: Cascade)
   shifts        Shift[]
-  shiftRequests ShiftRequest[]
 
-  @@index([clientId])
   @@index([active])
   @@index([fullName])
 }
@@ -166,11 +137,6 @@ model Shift {
 
   // Tipo de profissional necessario (ProfessionalType - validar no backend)
   requiredProfessionalType String @default("CAREGIVER")
-
-  // Endereco (pode ser diferente do paciente)
-  address      String
-  neighborhood String?
-  city         String?
 
   // Detalhes
   needs String? // Necessidades especificas (texto livre)
@@ -192,6 +158,9 @@ model Shift {
 
   // Status (ShiftStatus - validar no backend via maquina de estados)
   status String @default("OPEN")
+
+  // Contato confirmado com a cuidadora
+  contatoConfirmado Boolean @default(false)
 
   // Timestamps de execucao
   acceptedAt  DateTime?
@@ -300,43 +269,6 @@ model Availability {
 }
 
 // ==============================================
-// SHIFT REQUEST - Solicitacao de plantao pelo familiar
-// ==============================================
-// RequestStatus: "PENDING" | "APPROVED" | "REJECTED"
-
-model ShiftRequest {
-  id String @id @default(uuid())
-
-  // Dados da solicitacao
-  patientId                String
-  preferredStartDateTime   DateTime
-  preferredEndDateTime     DateTime
-  requiredProfessionalType String   @default("CAREGIVER")
-  needs                    String?  // Necessidades especificas
-  notes                    String?  // Observacoes do familiar
-  isUrgent                 Boolean  @default(false)
-
-  // Status da solicitacao
-  status        String    @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
-  adminResponse String?   // Resposta do admin (motivo de rejeicao, etc)
-  shiftId       String?   // ID do plantao criado (se aprovado)
-  resolvedAt    DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relacionamentos
-  clientId String
-  client   ClientProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  patient  Patient       @relation(fields: [patientId], references: [id])
-
-  @@index([clientId])
-  @@index([patientId])
-  @@index([status])
-  @@index([createdAt])
-}
-
-// ==============================================
 // FEEDBACK - Avaliacoes pos-plantao
 // ==============================================
 
@@ -371,4 +303,24 @@ model Feedback {
   @@index([shiftId])
   @@index([userId])
   @@index([fromRole])
+}
+
+// ==============================================
+// NOTIFICATION - Notificacoes in-app
+// ==============================================
+// NotificationType: "NEW_URGENT_SHIFT" | "SHIFT_ASSIGNED" | "SHIFT_CANCELLED"
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // "NEW_URGENT_SHIFT" | "SHIFT_ASSIGNED" | "SHIFT_CANCELLED"
+  title     String
+  body      String
+  link      String?  // ex: "/professional/shifts/abc123"
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }

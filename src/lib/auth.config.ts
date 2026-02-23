@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import type { UserRole } from "@/types";
 
 /**
  * Auth config compartilhado (sem Prisma).
@@ -15,22 +16,21 @@ export const authConfig: NextAuthConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        const u = user as unknown as Record<string, unknown>;
-        token.role = u.role as string;
-        token.professionalProfileId = (u.professionalProfileId as string) ?? null;
-        token.clientProfileId = (u.clientProfileId as string) ?? null;
+        token.role = user.role;
+        token.professionalProfileId = user.professionalProfileId ?? null;
       }
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string;
-        const su = session.user as unknown as Record<string, unknown>;
-        su.role = token.role;
-        su.professionalProfileId = token.professionalProfileId;
-        su.clientProfileId = token.clientProfileId;
-      }
-      return session;
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id as string,
+          role: token.role as UserRole,
+          professionalProfileId: (token.professionalProfileId ?? null) as string | null,
+        },
+      };
     },
   },
   providers: [], // Providers adicionados no auth.ts completo

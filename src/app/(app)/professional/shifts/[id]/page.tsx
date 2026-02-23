@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/ui/badge";
 import { formatDateTime, shiftEventTypeLabel } from "@/lib/utils";
 import type { ShiftStatus } from "@/types";
 import Link from "next/link";
-import { User, Clock, MapPin, AlertTriangle } from "lucide-react";
+import { Clock, MapPin, AlertTriangle } from "lucide-react";
 import { ProfessionalShiftActions } from "./shift-actions";
 
 export default async function ProfessionalShiftDetail({
@@ -26,13 +26,11 @@ export default async function ProfessionalShiftDetail({
       patient: {
         select: {
           fullName: true,
-          address: true,
-          neighborhood: true,
-          city: true,
-          medicalNotes: true,
+          bairro: true,
+          zona: true,
+          grauComplexidade: true,
           allergies: true,
           medications: true,
-          client: { select: { user: { select: { name: true } } } },
         },
       },
       events: {
@@ -63,9 +61,9 @@ export default async function ProfessionalShiftDetail({
     <div>
       <Link
         href="/professional/shifts"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+        className="mb-5 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800"
       >
-        &larr; Voltar aos plantões
+        ← Voltar aos plantões
       </Link>
 
       {/* Header */}
@@ -93,22 +91,13 @@ export default async function ProfessionalShiftDetail({
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">
           {/* Info do plantão */}
-          <Card>
+          <Card className="p-6">
             <div className="grid gap-4 text-sm sm:grid-cols-2">
               <div className="flex items-start gap-3">
                 <MapPin className="mt-0.5 h-5 w-5 text-slate-400 shrink-0" />
                 <div>
-                  <p className="text-xs font-medium uppercase text-slate-500">Endereço</p>
-                  <p className="text-slate-900">{shift.address}</p>
-                  {shift.neighborhood && <p className="text-slate-600">{shift.neighborhood}</p>}
-                  {shift.city && <p className="text-slate-600">{shift.city}</p>}
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <User className="mt-0.5 h-5 w-5 text-slate-400 shrink-0" />
-                <div>
-                  <p className="text-xs font-medium uppercase text-slate-500">Familiar</p>
-                  <p className="text-slate-900">{shift.patient.client.user.name}</p>
+                  <p className="text-xs font-medium uppercase text-slate-500">Localização</p>
+                  <p className="text-slate-900">{shift.patient.bairro} — Zona {shift.patient.zona}</p>
                   <p className="mt-0.5 text-xs text-slate-500">
                     Em caso de dúvidas, entre em contato com a equipe EPAD.
                   </p>
@@ -125,8 +114,8 @@ export default async function ProfessionalShiftDetail({
           </Card>
 
           {/* Timeline */}
-          <Card>
-            <h2 className="mb-4 text-lg font-semibold text-slate-900">
+          <Card className="p-6">
+            <h2 className="mb-4 text-sm font-semibold text-slate-900">
               Acompanhamento
             </h2>
             {shift.events.length === 0 ? (
@@ -161,7 +150,7 @@ export default async function ProfessionalShiftDetail({
 
         {/* Sidebar: info do paciente */}
         <div className="space-y-4">
-          <Card>
+          <Card className="p-4">
             <h2 className="mb-3 text-sm font-semibold text-slate-900">Dados do Paciente</h2>
             <div className="space-y-3 text-sm">
               {shift.patient.allergies && (
@@ -179,13 +168,7 @@ export default async function ProfessionalShiftDetail({
                   <p className="mt-0.5 text-slate-700">{shift.patient.medications}</p>
                 </div>
               )}
-              {shift.patient.medicalNotes && (
-                <div>
-                  <p className="text-xs font-medium uppercase text-slate-500">Notas Médicas</p>
-                  <p className="mt-0.5 text-slate-700">{shift.patient.medicalNotes}</p>
-                </div>
-              )}
-              {!shift.patient.allergies && !shift.patient.medications && !shift.patient.medicalNotes && (
+              {!shift.patient.allergies && !shift.patient.medications && (
                 <p className="text-slate-500">Nenhuma informação médica registrada.</p>
               )}
             </div>

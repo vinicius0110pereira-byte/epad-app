@@ -35,18 +35,20 @@ export function Pagination({ currentPage, totalPages, buildUrl }: PaginationProp
 
   const pages = getPageNumbers(currentPage, totalPages);
 
+  const navBtn =
+    "inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-none";
+  const disabledBtn =
+    "inline-flex items-center gap-1.5 rounded-xl border border-slate-100 bg-slate-50 px-3.5 py-2 text-sm font-medium text-slate-300 cursor-not-allowed select-none";
+
   return (
-    <nav className="mt-6 flex items-center justify-center gap-1" aria-label="Paginação">
+    <nav className="mt-8 flex items-center justify-center gap-1.5" aria-label="Paginação">
       {currentPage > 1 ? (
-        <Link
-          href={buildUrl(currentPage - 1)}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50"
-        >
+        <Link href={buildUrl(currentPage - 1)} className={navBtn}>
           <ChevronLeft className="h-4 w-4" />
           Anterior
         </Link>
       ) : (
-        <span className="inline-flex items-center gap-1 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-300 cursor-not-allowed">
+        <span className={disabledBtn}>
           <ChevronLeft className="h-4 w-4" />
           Anterior
         </span>
@@ -55,13 +57,13 @@ export function Pagination({ currentPage, totalPages, buildUrl }: PaginationProp
       <div className="flex items-center gap-1">
         {pages.map((p, i) =>
           p === "..." ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-sm text-slate-400">
-              ...
+            <span key={`ellipsis-${i}`} className="flex h-9 w-6 items-center justify-center text-sm text-slate-400">
+              ···
             </span>
           ) : p === currentPage ? (
             <span
               key={p}
-              className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg bg-blue-800 px-3 text-sm font-medium text-white"
+              className="inline-flex h-9 min-w-9 items-center justify-center rounded-xl bg-gradient-to-b from-blue-700 to-blue-900 px-3 text-sm font-semibold text-white shadow-sm"
             >
               {p}
             </span>
@@ -69,7 +71,7 @@ export function Pagination({ currentPage, totalPages, buildUrl }: PaginationProp
             <Link
               key={p}
               href={buildUrl(p)}
-              className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50"
+              className="inline-flex h-9 min-w-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-none"
             >
               {p}
             </Link>
@@ -78,15 +80,12 @@ export function Pagination({ currentPage, totalPages, buildUrl }: PaginationProp
       </div>
 
       {currentPage < totalPages ? (
-        <Link
-          href={buildUrl(currentPage + 1)}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50"
-        >
+        <Link href={buildUrl(currentPage + 1)} className={navBtn}>
           Próximo
           <ChevronRight className="h-4 w-4" />
         </Link>
       ) : (
-        <span className="inline-flex items-center gap-1 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-300 cursor-not-allowed">
+        <span className={disabledBtn}>
           Próximo
           <ChevronRight className="h-4 w-4" />
         </span>

@@ -3,8 +3,11 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+// Local SQLite dev uses schema.dev.prisma; Vercel PostgreSQL uses schema.prisma
+const isLocalSqlite = process.env["DATABASE_URL"]?.startsWith("file:");
+
 export default defineConfig({
-  schema: "prisma/schema.prisma",
+  schema: isLocalSqlite ? "prisma/schema.dev.prisma" : "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },

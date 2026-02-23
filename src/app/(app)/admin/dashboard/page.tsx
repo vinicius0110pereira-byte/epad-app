@@ -117,7 +117,8 @@ export default async function AdminDashboard() {
       select: {
         id: true,
         fullName: true,
-        client: { select: { user: { select: { name: true } } } },
+        bairro: true,
+        zona: true,
         _count: { select: { shifts: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -161,27 +162,32 @@ export default async function AdminDashboard() {
           title="Pacientes ativos"
           value={totalPatients}
           icon={<Heart className="h-5 w-5" />}
+          accent="red"
         />
         <StatCard
           title="Profissionais ativos"
           value={activeProfessionals}
           icon={<Users className="h-5 w-5" />}
+          accent="blue"
         />
         <StatCard
           title="Plantões abertos"
           value={openShifts}
           description={urgentShifts.length > 0 ? `${urgentShifts.length} urgente(s)` : undefined}
           icon={<Clock className="h-5 w-5" />}
+          accent="amber"
         />
         <StatCard
           title="Em andamento"
           value={inProgressShifts}
           icon={<Activity className="h-5 w-5" />}
+          accent="indigo"
         />
         <StatCard
           title="Concluídos na semana"
           value={completedThisWeek}
           icon={<CheckCircle className="h-5 w-5" />}
+          accent="emerald"
         />
       </div>
 
@@ -455,7 +461,7 @@ export default async function AdminDashboard() {
                   <div>
                     <p className="text-sm font-medium text-slate-900">{p.fullName}</p>
                     <p className="text-xs text-slate-500">
-                      {p.client?.user?.name} · {p._count.shifts} plantões
+                      {p.bairro} · {p._count.shifts} plantões
                     </p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-slate-400" />

@@ -24,12 +24,12 @@ export function ShiftActions({ shiftId, status, isMyShift }: Props) {
       const res = await fetch(`/api/shifts/${shiftId}/assign`, {
         method: "POST",
       });
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         toast.error(data.error || "Erro ao aceitar");
         return;
       }
-      toast.success("Plantão aceito com sucesso!");
+      toast.success("Plantão aceito! Aguarde...");
       setConfirmAction(null);
       router.refresh();
     } catch {

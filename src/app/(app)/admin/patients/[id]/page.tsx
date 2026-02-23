@@ -4,21 +4,17 @@ import { prisma } from "@/lib/prisma";
 import { Card, SectionCard } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { formatDateTime, formatDate } from "@/lib/utils";
+import { formatDateTime, formatDate, ZONA_LABELS } from "@/lib/utils";
 import type { ShiftStatus } from "@/types";
 import {
   ArrowLeft,
   MapPin,
-  Phone,
   Calendar,
   Pill,
   AlertTriangle,
-  FileText,
-  User,
   Star,
   Plus,
 } from "lucide-react";
-import { CopyPhoneButton } from "./copy-phone-button";
 
 export default async function AdminPatientDetailPage({
   params,
@@ -30,13 +26,6 @@ export default async function AdminPatientDetailPage({
 
   const patient = await prisma.patient.findUnique({
     where: { id },
-    include: {
-      client: {
-        include: {
-          user: { select: { name: true, email: true } },
-        },
-      },
-    },
   });
 
   if (!patient) notFound();
@@ -90,7 +79,7 @@ export default async function AdminPatientDetailPage({
     }
   }
 
-  const clientPhone = patient.client.phone;
+  const zonaLabel = ZONA_LABELS[patient.zona] ?? patient.zona;
 
   return (
     <div>
@@ -134,44 +123,26 @@ export default async function AdminPatientDetailPage({
                 <MapPin className="mt-0.5 h-5 w-5 text-slate-400" />
                 <div>
                   <p className="text-xs font-medium uppercase text-slate-500">
-                    Endereço
+                    Localização
                   </p>
                   <p className="text-sm text-slate-900">
-                    {patient.address}
-                    {patient.neighborhood
-                      ? `, ${patient.neighborhood}`
-                      : ""}
-                    {patient.city ? ` — ${patient.city}` : ""}
-                    {patient.state ? `/${patient.state}` : ""}
+                    {patient.bairro} — {zonaLabel}
                   </p>
-                  {patient.zipCode && (
-                    <p className="text-xs text-slate-500">
-                      CEP: {patient.zipCode}
-                    </p>
-                  )}
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <User className="mt-0.5 h-5 w-5 text-slate-400" />
+                <Calendar className="mt-0.5 h-5 w-5 text-slate-400" />
                 <div>
                   <p className="text-xs font-medium uppercase text-slate-500">
-                    Responsável
+                    Grau de Complexidade
                   </p>
                   <p className="text-sm text-slate-900">
-                    {patient.client.user.name}
+                    {patient.grauComplexidade === "1"
+                      ? "1 — Baixo"
+                      : patient.grauComplexidade === "2"
+                      ? "2 — Médio"
+                      : "3 — Alto"}
                   </p>
-                  <p className="text-xs text-slate-500">
-                    {patient.client.user.email}
-                  </p>
-                  {clientPhone && (
-                    <div className="mt-1 flex items-center gap-2">
-                      <Phone className="h-3.5 w-3.5 text-slate-400" />
-                      <span className="text-xs text-slate-700">
-                        {clientPhone}
-                      </span>
-                      <CopyPhoneButton phone={clientPhone} />
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -187,19 +158,6 @@ export default async function AdminPatientDetailPage({
                     </p>
                     <p className="text-sm font-medium text-red-800">
                       {patient.allergies}
-                    </p>
-                  </div>
-                </div>
-              )}
-              {patient.medicalNotes && (
-                <div className="flex items-start gap-3 rounded-lg bg-slate-50 p-3">
-                  <FileText className="mt-0.5 h-5 w-5 text-slate-400" />
-                  <div>
-                    <p className="text-xs font-medium uppercase text-slate-500">
-                      Notas Médicas
-                    </p>
-                    <p className="text-sm text-slate-700">
-                      {patient.medicalNotes}
                     </p>
                   </div>
                 </div>

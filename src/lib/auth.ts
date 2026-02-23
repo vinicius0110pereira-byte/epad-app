@@ -29,7 +29,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             where: { email },
             include: {
               professionalProfile: { select: { id: true } },
-              clientProfile: { select: { id: true } },
             },
           });
 
@@ -48,7 +47,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: user.name,
             role: user.role as UserRole,
             professionalProfileId: user.professionalProfile?.id ?? null,
-            clientProfileId: user.clientProfile?.id ?? null,
           };
         } catch (err) {
           console.error("[auth] Error during authentication:", err);
@@ -62,10 +60,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // No login: popula token com dados frescos do banco
       if (user) {
         token.id = user.id;
-        const u = user as unknown as Record<string, unknown>;
-        token.role = u.role as string;
-        token.professionalProfileId = (u.professionalProfileId as string) ?? null;
-        token.clientProfileId = (u.clientProfileId as string) ?? null;
+        token.role = user.role;
+        token.professionalProfileId = user.professionalProfileId ?? null;
         token.lastRefresh = Date.now();
         return token;
       }
@@ -84,7 +80,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             active: true,
             name: true,
             professionalProfile: { select: { id: true } },
-            clientProfile: { select: { id: true } },
           },
         });
 
@@ -96,7 +91,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = dbUser.role;
         token.name = dbUser.name;
         token.professionalProfileId = dbUser.professionalProfile?.id ?? null;
-        token.clientProfileId = dbUser.clientProfile?.id ?? null;
         token.lastRefresh = Date.now();
       } catch {
         // Em caso de erro no banco, mantém o token atual
@@ -105,14 +99,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string;
-        const su = session.user as unknown as Record<string, unknown>;
-        su.role = token.role;
-        su.professionalProfileId = token.professionalProfileId;
-        su.clientProfileId = token.clientProfileId;
-      }
-      return session;
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id as string,
+          role: token.role as UserRole,
+          professionalProfileId: (token.professionalProfileId ?? null) as string | null,
+        },
+      };
     },
   },
 });

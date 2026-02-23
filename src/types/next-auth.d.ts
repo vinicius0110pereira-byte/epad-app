@@ -8,7 +8,6 @@ declare module "next-auth" {
       name: string | null;
       role: UserRole;
       professionalProfileId?: string | null;
-      clientProfileId?: string | null;
     };
   }
 
@@ -18,7 +17,6 @@ declare module "next-auth" {
     name: string | null;
     role: UserRole;
     professionalProfileId?: string | null;
-    clientProfileId?: string | null;
   }
 }
 
@@ -27,6 +25,5 @@ declare module "next-auth/jwt" {
     id: string;
     role: UserRole;
     professionalProfileId?: string | null;
-    clientProfileId?: string | null;
   }
 }

@@ -91,10 +91,10 @@ export default async function ProfessionalEarningsPage({ searchParams }: Props) 
           <Link
             key={opt.value}
             href={`/professional/earnings?period=${opt.value}`}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            className={`rounded-xl px-4 py-2 text-sm font-medium shadow-sm transition-all ${
               period === opt.value
-                ? "bg-blue-800 text-white"
-                : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                ? "bg-gradient-to-b from-blue-700 to-blue-900 text-white shadow-blue-800/25"
+                : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
             }`}
           >
             {opt.label}
@@ -108,21 +108,25 @@ export default async function ProfessionalEarningsPage({ searchParams }: Props) 
           title="Ganho no período"
           value={formatCurrency(periodTotal)}
           icon={<DollarSign className="h-6 w-6" />}
+          accent="emerald"
         />
         <StatCard
           title="Plantões no período"
           value={completedShifts.length}
           icon={<ClipboardList className="h-6 w-6" />}
+          accent="blue"
         />
         <StatCard
           title="Ticket médio"
           value={formatCurrency(avgTicket)}
           icon={<TrendingUp className="h-6 w-6" />}
+          accent="indigo"
         />
         <StatCard
           title="Ganho total (histórico)"
           value={formatCurrency(allTimeTotal)}
           icon={<Calendar className="h-6 w-6" />}
+          accent="purple"
         />
       </div>
 

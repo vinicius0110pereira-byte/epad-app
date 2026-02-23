@@ -155,10 +155,10 @@ export default async function AdminReportsPage({ searchParams }: Props) {
           <Link
             key={opt.value}
             href={`/admin/reports?period=${opt.value}`}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            className={`rounded-xl px-4 py-2 text-sm font-medium shadow-sm transition-all ${
               activePeriod === opt.value
-                ? "bg-blue-800 text-white"
-                : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                ? "bg-gradient-to-b from-blue-700 to-blue-900 text-white shadow-blue-800/25"
+                : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
             }`}
           >
             {opt.label}
@@ -171,18 +171,18 @@ export default async function AdminReportsPage({ searchParams }: Props) {
             name="from"
             type="date"
             defaultValue={from}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
           />
           <span className="text-sm text-slate-400">até</span>
           <input
             name="to"
             type="date"
             defaultValue={to}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
           />
           <button
             type="submit"
-            className="rounded-lg bg-blue-800 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded-xl bg-gradient-to-b from-blue-700 to-blue-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition-all hover:from-blue-600 hover:to-blue-800 active:scale-[0.97]"
           >
             Filtrar
           </button>
@@ -195,16 +195,19 @@ export default async function AdminReportsPage({ searchParams }: Props) {
           title="Total Faturado"
           value={formatCurrency(totalRevenue)}
           icon={<DollarSign className="h-6 w-6" />}
+          accent="emerald"
         />
         <StatCard
           title="Plantões"
           value={shifts.length}
           icon={<ClipboardList className="h-6 w-6" />}
+          accent="blue"
         />
         <StatCard
           title="Ticket Médio"
           value={formatCurrency(avgTicket)}
           icon={<TrendingUp className="h-6 w-6" />}
+          accent="indigo"
         />
         <StatCard
           title="Ajustes"
@@ -217,6 +220,7 @@ export default async function AdminReportsPage({ searchParams }: Props) {
                 : "sem ajustes"
           }
           icon={<Settings2 className="h-6 w-6" />}
+          accent="amber"
         />
       </div>
 
