@@ -154,6 +154,20 @@ export function professionalStatusColor(status: ProfessionalStatus): string {
   return map[status] ?? "bg-gray-100 text-gray-800";
 }
 
+/**
+ * Retorna as iniciais de um nome completo.
+ * Ex: "João Pereira" → "JP", "Ana Maria Silva" → "AMS"
+ */
+export function getInitials(name: string | null | undefined): string {
+  if (!name) return "—";
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word[0].toUpperCase())
+    .join("");
+}
+
 export const ZONA_LABELS: Record<string, string> = {
   NORTE: "ZN",
   SUL: "ZS",

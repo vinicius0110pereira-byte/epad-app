@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Clock, MapPin, User, AlertTriangle, Zap } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badge";
 import type { ShiftStatus } from "@/types";
-import { formatDateTime, formatCurrency } from "@/lib/utils";
+import { formatDateTime, formatCurrency, getInitials } from "@/lib/utils";
 
 interface ShiftCardProps {
   id: string;
@@ -91,7 +91,7 @@ export function ShiftCard({
           {professionalName && (
             <p className="mt-1 flex items-center gap-1 text-xs text-slate-600">
               <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-              {professionalName}
+              {getInitials(professionalName)}
             </p>
           )}
 

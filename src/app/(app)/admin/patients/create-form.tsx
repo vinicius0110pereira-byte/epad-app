@@ -24,6 +24,7 @@ export function AdminCreatePatientForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: form.get("fullName"),
+          sexo: form.get("sexo") || "NAO_INFORMADO",
           bairro: form.get("bairro"),
           zona: form.get("zona"),
           grauComplexidade: form.get("grauComplexidade"),
@@ -49,6 +50,17 @@ export function AdminCreatePatientForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <Input id="fullName" name="fullName" label="Nome completo" required />
+      <Select
+        id="sexo"
+        name="sexo"
+        label="Sexo"
+        options={[
+          { value: "NAO_INFORMADO", label: "Não informado" },
+          { value: "M", label: "Masculino" },
+          { value: "F", label: "Feminino" },
+          { value: "OUTRO", label: "Outro" },
+        ]}
+      />
       <Input id="bairro" name="bairro" label="Bairro" required />
       <Select
         id="zona"

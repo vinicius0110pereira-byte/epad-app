@@ -103,6 +103,7 @@ model Patient {
   id           String    @id @default(uuid())
   fullName     String
   birthDate    DateTime?
+  sexo         String    @default("NAO_INFORMADO") // "M" | "F" | "OUTRO" | "NAO_INFORMADO"
   bairro       String
   zona         String    // "NORTE" | "SUL" | "LESTE" | "OESTE" | "CENTRO"
   grauComplexidade String @default("1") // "1" | "2" | "3"

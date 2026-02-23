@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { Card, SectionCard } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { formatDateTime, formatDate, ZONA_LABELS } from "@/lib/utils";
+import { formatDateTime, formatDate, ZONA_LABELS, getInitials } from "@/lib/utils";
+import { SEXO_LABELS } from "@/lib/validators/patient";
 import type { ShiftStatus } from "@/types";
 import {
   ArrowLeft,
@@ -14,6 +15,7 @@ import {
   AlertTriangle,
   Star,
   Plus,
+  UserCircle,
 } from "lucide-react";
 
 export default async function AdminPatientDetailPage({
@@ -145,6 +147,17 @@ export default async function AdminPatientDetailPage({
                   </p>
                 </div>
               </div>
+              <div className="flex items-start gap-3">
+                <UserCircle className="mt-0.5 h-5 w-5 text-slate-400" />
+                <div>
+                  <p className="text-xs font-medium uppercase text-slate-500">
+                    Sexo
+                  </p>
+                  <p className="text-sm text-slate-900">
+                    {SEXO_LABELS[(patient.sexo ?? "NAO_INFORMADO") as keyof typeof SEXO_LABELS] ?? "Não informado"}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Medical info */}
@@ -209,7 +222,7 @@ export default async function AdminPatientDetailPage({
                       </p>
                       <p className="text-xs text-slate-500">
                         {s.professional
-                          ? s.professional.user.name
+                          ? getInitials(s.professional.user.name)
                           : "Sem profissional"}
                       </p>
                     </div>
@@ -242,7 +255,7 @@ export default async function AdminPatientDetailPage({
                         {formatDateTime(s.startDateTime)}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {s.professional ? s.professional.user.name : "—"}
+                        {s.professional ? getInitials(s.professional.user.name) : "—"}
                       </p>
                     </div>
                     <StatusBadge status={s.status as ShiftStatus} />
