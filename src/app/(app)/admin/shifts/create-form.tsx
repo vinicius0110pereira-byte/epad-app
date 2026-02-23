@@ -47,15 +47,22 @@ export function AdminCreateShiftForm({ patients }: Props) {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Erro ao criar plantão");
+        let msg = `Erro ${res.status}`;
+        try {
+          const data = await res.json();
+          msg = data.error || msg;
+        } catch {
+          const text = await res.text().catch(() => "");
+          msg = `Erro ${res.status}: ${text.slice(0, 200) || "sem detalhe"}`;
+        }
+        setError(msg);
         return;
       }
 
       e.currentTarget.reset();
       router.refresh();
-    } catch {
-      setError("Erro de conexão");
+    } catch (err) {
+      setError(`Erro de conexão: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
